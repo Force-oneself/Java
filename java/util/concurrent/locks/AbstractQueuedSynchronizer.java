@@ -654,29 +654,25 @@ public abstract class AbstractQueuedSynchronizer
      * @param node the node
      */
     private void unparkSuccessor(Node node) {
-        /*
-         * If status is negative (i.e., possibly needing signal) try
-         * to clear in anticipation of signalling.  It is OK if this
-         * fails or if status is changed by waiting thread.
-         */
+        // 这里，node一般为当前线程所在的结点。
         int ws = node.waitStatus;
+        // 置零当前线程所在的结点状态，允许失败。
         if (ws < 0)
             compareAndSetWaitStatus(node, ws, 0);
 
-        /*
-         * Thread to unpark is held in successor, which is normally
-         * just the next node.  But if cancelled or apparently null,
-         * traverse backwards from tail to find the actual
-         * non-cancelled successor.
-         */
+        // 找到下一个需要唤醒的结点s
         Node s = node.next;
+        // 如果为空或已取消
         if (s == null || s.waitStatus > 0) {
             s = null;
+            // 从后向前找。
             for (Node t = tail; t != null && t != node; t = t.prev)
+                // 从这里可以看出，<=0的结点，都是还有效的结点。
                 if (t.waitStatus <= 0)
                     s = t;
         }
         if (s != null)
+            // 唤醒
             LockSupport.unpark(s.thread);
     }
 
@@ -844,7 +840,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
+        // 调用park()使线程进入waiting状态
         LockSupport.park(this);
+        // 如果被唤醒，查看自己是不是被中断的。
         return Thread.interrupted();
     }
 
@@ -1285,8 +1283,10 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final boolean release(int arg) {
         if (tryRelease(arg)) {
+            // 找到头结点
             Node h = head;
             if (h != null && h.waitStatus != 0)
+                // 唤醒等待队列里的下一个线程
                 unparkSuccessor(h);
             return true;
         }
