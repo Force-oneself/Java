@@ -2046,8 +2046,7 @@ public class TreeMap<K,V>
     private static final boolean BLACK = true;
 
     /**
-     * Node in the Tree.  Doubles as a means to pass key-value pairs back to
-     * user (see Map.Entry).
+     * 树中的节点。用作将键值对传递回用户的一种方法（请参阅Map.Entry）.
      */
 
     static final class Entry<K,V> implements Map.Entry<K,V> {
