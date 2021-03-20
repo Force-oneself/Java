@@ -940,9 +940,7 @@ class Thread implements Runnable {
     }
 
     /**
-     * Tests if some Thread has been interrupted.  The interrupted state
-     * is reset or not based on the value of ClearInterrupted that is
-     * passed.
+     * 测试某些线程是否已被中断。中断状态ss是根据传递的ClearInterrupted的值重置还是不重置。
      */
     private native boolean isInterrupted(boolean ClearInterrupted);
 

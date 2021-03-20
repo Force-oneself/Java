@@ -123,22 +123,26 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         abstract void lock();
 
         /**
-         * Performs non-fair tryLock.  tryAcquire is implemented in
-         * subclasses, but both need nonfair try for trylock method.
+         * 执行不公平的tryLock。 tryAcquire是在
+         * 子类中实现的，但是都需要对trylock方法进行不公平的尝试.
          */
         final boolean nonfairTryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
+            // 这个if条件是没有其他线程获取该对象的锁，我们用CAS尝试获取锁
             if (c == 0) {
                 if (compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
+                    // 这个方法在cas成功后，将对象的Mark Word里的锁标志改成该线程
                     return true;
                 }
-            }
-            else if (current == getExclusiveOwnerThread()) {
+                // 是当前线程，直接获取到锁。实现可重入性。
+            } else if (current == getExclusiveOwnerThread()) {
+                // acquires默认传入1，相当于让nextc自增
                 int nextc = c + acquires;
                 if (nextc < 0) // overflow
                     throw new Error("Maximum lock count exceeded");
+                // 将标志位改成自增后的值
                 setState(nextc);
                 return true;
             }
@@ -193,14 +197,13 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
-     * Sync object for non-fair locks
+     * 同步对象的非公平锁
      */
     static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
 
         /**
-         * Performs lock.  Try immediate barge, backing up to normal
-         * acquire on failure.
+         * 执行锁定。尝试立即进行驳船，恢复正常,失败时获取.
          */
         final void lock() {
             if (compareAndSetState(0, 1))
@@ -215,7 +218,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     }
 
     /**
-     * Sync object for fair locks
+     * 同步对象以获取公平锁
      */
     static final class FairSync extends Sync {
         private static final long serialVersionUID = -3000897897090466540L;
@@ -225,15 +228,15 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
 
         /**
-         * Fair version of tryAcquire.  Don't grant access unless
-         * recursive call or no waiters or is first.
+         * 公平版本的tryAcquire。除非递归调用或没有服务员或者是第一个，否则不要授予访问权限.
          */
         protected final boolean tryAcquire(int acquires) {
             final Thread current = Thread.currentThread();
             int c = getState();
             if (c == 0) {
+                // 检查是否有等待队列的
                 if (!hasQueuedPredecessors() &&
-                    compareAndSetState(0, acquires)) {
+                        compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
                     return true;
                 }

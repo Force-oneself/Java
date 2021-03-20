@@ -391,20 +391,19 @@ public abstract class AbstractQueuedSynchronizer
         static final Node EXCLUSIVE = null;
 
         /**
-         * waitStatus value to indicate thread has cancelled
+         * waitStatus值，指示线程已取消
          */
         static final int CANCELLED = 1;
         /**
-         * waitStatus value to indicate successor's thread needs unparking
+         * waitStatus值，指示后续线程需要取消停放
          */
         static final int SIGNAL = -1;
         /**
-         * waitStatus value to indicate thread is waiting on condition
+         * waitStatus值，指示线程正在等待条件
          */
         static final int CONDITION = -2;
         /**
-         * waitStatus value to indicate the next acquireShared should
-         * unconditionally propagate
+         * waitStatus值，指示下一个acquireShared应该无条件地传播
          */
         static final int PROPAGATE = -3;
 
@@ -445,15 +444,11 @@ public abstract class AbstractQueuedSynchronizer
         volatile int waitStatus;
 
         /**
-         * Link to predecessor node that current node/thread relies on
-         * for checking waitStatus. Assigned during enqueuing, and nulled
-         * out (for sake of GC) only upon dequeuing.  Also, upon
-         * cancellation of a predecessor, we short-circuit while
-         * finding a non-cancelled one, which will always exist
-         * because the head node is never cancelled: A node becomes
-         * head only as a result of successful acquire. A
-         * cancelled thread never succeeds in acquiring, and a thread only
-         * cancels itself, not any other node.
+         * 链接到当前节点/线程所依赖的先前节点
+         * 以检查waitStatus。在排队时分配，并且仅在出队时将
+         * 清空（出于GC的考虑）。同样，在取消前任后，我们会在短路的同时
+         * 找到一个永远不会存在的不可取消的前者，因为头节点从未被取消：一个节点仅由于成功获取而成为头。
+         * 被取消的线程永远不会成功获取，并且仅一个线程*会自行取消，不会取消任何其他节点.
          */
         volatile Node prev;
 
@@ -473,8 +468,7 @@ public abstract class AbstractQueuedSynchronizer
         volatile Node next;
 
         /**
-         * The thread that enqueued this node.  Initialized on
-         * construction and nulled out after use.
+         * 此节点上排队的线程.  在结构上初始化，使用后消失.
          */
         volatile Thread thread;
 
@@ -498,9 +492,9 @@ public abstract class AbstractQueuedSynchronizer
         }
 
         /**
-         * Returns previous node, or throws NullPointerException if null.
-         * Use when predecessor cannot be null.  The null check could
-         * be elided, but is present to help the VM.
+         * 返回上一个节点，如果为null，则抛出NullPointerException。
+         * 在前任不能为null时使用。
+         * 可以取消空检查，但它可以帮助虚拟机.
          *
          * @return the predecessor of this node
          */
@@ -535,13 +529,13 @@ public abstract class AbstractQueuedSynchronizer
     private transient volatile Node head;
 
     /**
-     * Tail of the wait queue, lazily initialized.  Modified only via
-     * method enq to add new wait node.
+     * 等待队列的尾部，延迟初始化。仅通过
+     * 方法enq进行修改以添加新的等待节点.
      */
     private transient volatile Node tail;
 
     /**
-     * The synchronization state.
+     * 同步状态.
      */
     private volatile int state;
 
@@ -621,8 +615,10 @@ public abstract class AbstractQueuedSynchronizer
      * @return the new node
      */
     private Node addWaiter(Node mode) {
+        // 以给定模式构造结点。mode有两种：EXCLUSIVE（独占）和SHARED（共享）
         Node node = new Node(Thread.currentThread(), mode);
         // Try the fast path of enq; backup to full enq on failure
+        // 尝试快速方式直接放到队尾。
         Node pred = tail;
         if (pred != null) {
             node.prev = pred;
@@ -631,6 +627,7 @@ public abstract class AbstractQueuedSynchronizer
                 return node;
             }
         }
+        // 上一步失败则通过enq入队。
         enq(node);
         return node;
     }
@@ -856,8 +853,7 @@ public abstract class AbstractQueuedSynchronizer
      */
 
     /**
-     * Acquires in exclusive uninterruptible mode for thread already in
-     * queue. Used by condition wait methods as well as acquire.
+     * 以排他的不间断模式获取已在队列中的线程。用于条件等待方法以及获取.
      *
      * @param node the node
      * @param arg  the acquire argument
@@ -899,7 +895,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in exclusive interruptible mode.
+     * 以排他性可中断模式获取.
      *
      * @param arg the acquire argument
      */
@@ -927,7 +923,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in exclusive timed mode.
+     * 以排他定时模式获取.
      *
      * @param arg          the acquire argument
      * @param nanosTimeout max wait time
@@ -965,7 +961,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in shared uninterruptible mode.
+     * 以共享的不间断模式进行获取.
      *
      * @param arg the acquire argument
      */
@@ -998,7 +994,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in shared interruptible mode.
+     * 以共享的可中断模式获取.
      *
      * @param arg the acquire argument
      */
@@ -1537,10 +1533,10 @@ public abstract class AbstractQueuedSynchronizer
      * @since 1.7
      */
     public final boolean hasQueuedPredecessors() {
-        // The correctness of this depends on head being initialized
-        // before tail and on head.next being accurate if the current
-        // thread is first in queue.
-        Node t = tail; // Read fields in reverse initialization order
+        // 正确性取决于被初始化的磁头
+        // 在尾部和头部之前(如果当前)
+        // 线程在队列中的第一个.
+        Node t = tail; // 以相反的初始化顺序读取字段
         Node h = head;
         Node s;
         return h != t &&
@@ -2325,7 +2321,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * CAS head field. Used only by enq.
+     * CAS头字段。仅由enq使用.
      */
     private final boolean compareAndSetHead(Node update) {
         return unsafe.compareAndSwapObject(this, headOffset, null, update);

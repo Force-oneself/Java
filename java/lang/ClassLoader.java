@@ -378,7 +378,7 @@ public abstract class ClassLoader {
         throws ClassNotFoundException
     {
         synchronized (getClassLoadingLock(name)) {
-            // First, check if the class has already been loaded
+            // 首先，检查是否已经被类加载器加载过
             Class<?> c = findLoadedClass(name);
             if (c == null) {
                 long t0 = System.nanoTime();
@@ -389,17 +389,17 @@ public abstract class ClassLoader {
                         c = findBootstrapClassOrNull(name);
                     }
                 } catch (ClassNotFoundException e) {
-                    // ClassNotFoundException thrown if class not found
-                    // from the non-null parent class loader
+                    // 如果找不到类，则抛出ClassNotFoundException
+                    // 从非空父类加载器
                 }
 
                 if (c == null) {
-                    // If still not found, then invoke findClass in order
-                    // to find the class.
+                    // 如果仍然找不到，调用自己的findClass
+                    // 找到class.
                     long t1 = System.nanoTime();
                     c = findClass(name);
 
-                    // this is the defining class loader; record the stats
+                    // 这是定义类加载器；记录统计数据
                     sun.misc.PerfCounter.getParentDelegationTime().addTime(t1 - t0);
                     sun.misc.PerfCounter.getFindClassTime().addElapsedTimeFrom(t1);
                     sun.misc.PerfCounter.getFindClasses().increment();

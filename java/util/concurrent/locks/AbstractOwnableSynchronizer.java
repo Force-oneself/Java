@@ -54,12 +54,12 @@ public abstract class AbstractOwnableSynchronizer
     private static final long serialVersionUID = 3737899427754241961L;
 
     /**
-     * Empty constructor for use by subclasses.
+     * 空构造函数供子类使用.
      */
     protected AbstractOwnableSynchronizer() { }
 
     /**
-     * The current owner of exclusive mode synchronization.
+     * 独占模式同步的当前所有者.
      */
     private transient Thread exclusiveOwnerThread;
 
