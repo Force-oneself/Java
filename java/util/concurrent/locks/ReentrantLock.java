@@ -114,6 +114,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * represent the number of holds on the lock.
      */
     abstract static class Sync extends AbstractQueuedSynchronizer {
+
         private static final long serialVersionUID = -5179523762034025860L;
 
         /**
@@ -132,8 +133,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             // 这个if条件是没有其他线程获取该对象的锁，我们用CAS尝试获取锁
             if (c == 0) {
                 if (compareAndSetState(0, acquires)) {
-                    setExclusiveOwnerThread(current);
                     // 这个方法在cas成功后，将对象的Mark Word里的锁标志改成该线程
+                    setExclusiveOwnerThread(current);
                     return true;
                 }
                 // 是当前线程，直接获取到锁。实现可重入性。
@@ -172,7 +173,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             return new ConditionObject();
         }
 
-        // Methods relayed from outer class
+        // 从外部类继承的方法
 
         final Thread getOwner() {
             return getState() == 0 ? null : getExclusiveOwnerThread();
@@ -206,7 +207,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * 执行锁定。尝试立即进行驳船，恢复正常,失败时获取.
          */
         final void lock() {
-            if (compareAndSetState(0, 1))
+            // 先使用cas快速抢占，成功就直接将可重入对象设置为自己，反之从队列中取
+            if (compareAndSetState(0, 1)) // 非公平锁的体现
                 setExclusiveOwnerThread(Thread.currentThread());
             else
                 acquire(1);
@@ -221,9 +223,11 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * 同步对象以获取公平锁
      */
     static final class FairSync extends Sync {
+
         private static final long serialVersionUID = -3000897897090466540L;
 
         final void lock() {
+            // 直接从CLH队列中取，公平锁的体现
             acquire(1);
         }
 
@@ -234,13 +238,15 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             final Thread current = Thread.currentThread();
             int c = getState();
             if (c == 0) {
-                // 检查是否有等待队列的
+                // 检查队列是否轮到自己执行了
                 if (!hasQueuedPredecessors() &&
                         compareAndSetState(0, acquires)) {
+                    // 设置cas的头对象可重入Thread
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            // 可重入实现
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0)
