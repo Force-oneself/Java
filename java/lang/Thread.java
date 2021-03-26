@@ -143,7 +143,7 @@ class Thread implements Runnable {
     /* The context ClassLoader for this thread */
     private ClassLoader contextClassLoader;
 
-    /* The inherited AccessControlContext of this thread */
+    /* 该线程的继承的AccessControlContext */
     private AccessControlContext inheritedAccessControlContext;
 
     /* For autonumbering anonymous threads. */

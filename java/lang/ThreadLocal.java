@@ -92,11 +92,11 @@ public class ThreadLocal<T> {
         new AtomicInteger();
 
     /**
-     * The difference between successively generated hash codes - turns
-     * implicit sequential thread-local IDs into near-optimally spread
-     * multiplicative hash values for power-of-two-sized tables.
+     * 连续生成的哈希码之间的差异-将
+     * 隐式顺序线程本地ID转换为接近最佳分布的
+     * 二乘幂表的乘法哈希值.
      */
-    private static final int HASH_INCREMENT = 0x61c88647;
+    private static final int HASH_INCREMENT = 0x61c88647; // 1,640,531,527
 
     /**
      * Returns the next hash code.
@@ -382,6 +382,7 @@ public class ThreadLocal<T> {
             setThreshold(len);
             table = new Entry[len];
 
+            // 将父类table复制到当前table中
             for (int j = 0; j < len; j++) {
                 Entry e = parentTable[j];
                 if (e != null) {
@@ -413,9 +414,11 @@ public class ThreadLocal<T> {
         private Entry getEntry(ThreadLocal<?> key) {
             int i = key.threadLocalHashCode & (table.length - 1);
             Entry e = table[i];
+            // 如果当前值key与目标值一样就直接返回
             if (e != null && e.get() == key)
                 return e;
             else
+                // 不然在下一个坐标寻找
                 return getEntryAfterMiss(key, i, e);
         }
 
@@ -434,11 +437,14 @@ public class ThreadLocal<T> {
 
             while (e != null) {
                 ThreadLocal<?> k = e.get();
+                // 相等就直接返回（这里第一次执行与前面结果是一样的主要为了判断后续的k是否为null）(e != null && e.get() == key)
                 if (k == key)
                     return e;
+                // k == null 说明被删除了(或者被gc这里不太确定)，此时需要将过期的内容清除掉防止内存泄露（惰性删除）
                 if (k == null)
                     expungeStaleEntry(i);
                 else
+                    // 寻找下一个坐标接着循环
                     i = nextIndex(i, len);
                 e = tab[i];
             }
@@ -461,25 +467,26 @@ public class ThreadLocal<T> {
             Entry[] tab = table;
             int len = tab.length;
             int i = key.threadLocalHashCode & (len-1);
-
+            // 对应tab[i]上存在值时需要进入循环
             for (Entry e = tab[i];
                  e != null;
                  e = tab[i = nextIndex(i, len)]) {
                 ThreadLocal<?> k = e.get();
-
+                // 相等直接返回,并且覆盖旧值
                 if (k == key) {
                     e.value = value;
                     return;
                 }
-
+                // 替换并清除掉过期的k
                 if (k == null) {
                     replaceStaleEntry(key, value, i);
                     return;
                 }
             }
-
+            // 无值直接new放入
             tab[i] = new Entry(key, value);
             int sz = ++size;
+            // 清除i坐标后面的过期的值，没有过期值清除时才会进行阈值判断是否需要rehash
             if (!cleanSomeSlots(i, sz) && sz >= threshold)
                 rehash();
         }
@@ -590,29 +597,32 @@ public class ThreadLocal<T> {
             Entry[] tab = table;
             int len = tab.length;
 
-            // expunge entry at staleSlot
+            // 在staleSlot删除条目
             tab[staleSlot].value = null;
             tab[staleSlot] = null;
             size--;
 
-            // Rehash until we encounter null
+            // 重新哈希，直到遇到null
             Entry e;
             int i;
             for (i = nextIndex(staleSlot, len);
                  (e = tab[i]) != null;
                  i = nextIndex(i, len)) {
                 ThreadLocal<?> k = e.get();
+                // 为null接着清除
                 if (k == null) {
                     e.value = null;
                     tab[i] = null;
                     size--;
                 } else {
                     int h = k.threadLocalHashCode & (len - 1);
+                    // hash值与当前坐标是不一致的  需要进行调整位置
                     if (h != i) {
                         tab[i] = null;
 
                         // Unlike Knuth 6.4 Algorithm R, we must scan until
                         // null because multiple entries could have been stale.
+                        // 这里将h放入原本的hash出来的坐标下，如果有值就接着下一个坐标放
                         while (tab[h] != null)
                             h = nextIndex(h, len);
                         tab[h] = e;
@@ -670,7 +680,7 @@ public class ThreadLocal<T> {
         private void rehash() {
             expungeStaleEntries();
 
-            // Use lower threshold for doubling to avoid hysteresis
+            // 使用较低的阈值加倍以避免滞后
             if (size >= threshold - threshold / 4)
                 resize();
         }
