@@ -671,6 +671,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (ws == Node.SIGNAL) {
                     if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
                         continue;            // loop to recheck cases
+                    // 唤醒后继节点
                     unparkSuccessor(h);
                 } else if (ws == 0 &&
                         !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
@@ -691,6 +692,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     private void setHeadAndPropagate(Node node, int propagate) {
         Node h = head; // Record old head for check below
+        // head指向自己
         setHead(node);
         /*
          * Try to signal next queued node if:
@@ -708,6 +710,7 @@ public abstract class AbstractQueuedSynchronizer
          * racing acquires/releases, so most need signals now or soon
          * anyway.
          */
+        // 如果还有剩余量，继续唤醒下一个邻居线程
         if (propagate > 0 || h == null || h.waitStatus < 0 ||
                 (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
@@ -943,23 +946,31 @@ public abstract class AbstractQueuedSynchronizer
      * @param arg the acquire argument
      */
     private void doAcquireShared(int arg) {
+        // 加入队列尾部
         final Node node = addWaiter(Node.SHARED);
+        // 是否成功标志
         boolean failed = true;
         try {
+            // 等待过程中是否被中断过的标志
             boolean interrupted = false;
             for (; ; ) {
                 final Node p = node.predecessor();
+                // 如果到head的下一个，因为head是拿到资源的线程，此时node被唤醒，很可能是head用完资源来唤醒自己的
                 if (p == head) {
+                    // 尝试获取资源
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
+                        // 将head指向自己，还有剩余资源可以再唤醒之后的线程
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
+                        // 如果等待过程中被打断过，此时将中断补上。
                         if (interrupted)
                             selfInterrupt();
                         failed = false;
                         return;
                     }
                 }
+                // 判断状态，寻找安全点，进入waiting状态，等着被unpark()或interrupt()
                 if (shouldParkAfterFailedAcquire(p, node) &&
                         parkAndCheckInterrupt())
                     interrupted = true;
@@ -977,20 +988,27 @@ public abstract class AbstractQueuedSynchronizer
      */
     private void doAcquireSharedInterruptibly(int arg)
             throws InterruptedException {
+        // 加入队列尾部
         final Node node = addWaiter(Node.SHARED);
+        // 是否成功标志
         boolean failed = true;
         try {
             for (; ; ) {
+                // 前驱节点
                 final Node p = node.predecessor();
+                // 如果到head的下一个，因为head是拿到资源的线程，此时node被唤醒，很可能是head用完资源来唤醒自己的
                 if (p == head) {
+                    // 尝试获取资源
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
+                        // 将head指向自己，还有剩余资源可以再唤醒之后的线程
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
                         failed = false;
                         return;
                     }
                 }
+                // 判断状态，寻找安全点，进入waiting状态，等着被unpark()或interrupt()
                 if (shouldParkAfterFailedAcquire(p, node) &&
                         parkAndCheckInterrupt())
                     throw new InterruptedException();
@@ -1193,13 +1211,9 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in exclusive mode, aborting if interrupted.
-     * Implemented by first checking interrupt status, then invoking
-     * at least once {@link #tryAcquire}, returning on
-     * success.  Otherwise the thread is queued, possibly repeatedly
-     * blocking and unblocking, invoking {@link #tryAcquire}
-     * until success or the thread is interrupted.  This method can be
-     * used to implement method {@link Lock#lockInterruptibly}.
+     * 以互斥模式进行获取，如果被中断则中止。通过首先检查中断状态，然后至少调用一次{@link tryAcquire}
+     * 来实现，并成功返回。否则，线程将排队，并可能反复阻塞和解除阻塞，调用{@link tryAcquire}
+     * 直到成功或线程被中断为止。此方法可用于实现方法{@link LocklockInterruptably}.
      *
      * @param arg the acquire argument.  This value is conveyed to
      *            {@link #tryAcquire} but is otherwise uninterpreted and
@@ -1262,11 +1276,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in shared mode, ignoring interrupts.  Implemented by
-     * first invoking at least once {@link #tryAcquireShared},
-     * returning on success.  Otherwise the thread is queued, possibly
-     * repeatedly blocking and unblocking, invoking {@link
-     * #tryAcquireShared} until success.
+     *以共享模式获取，忽略中断。通过首先至少调用一次{@link tryAcquireShared}并成功返回来实现。
+     * 否则，线程将排队，并可能反复阻塞和解除阻塞，并调用{@link tryAcquireShared}直到成功.
      *
      * @param arg the acquire argument.  This value is conveyed to
      *            {@link #tryAcquireShared} but is otherwise uninterpreted
@@ -1278,12 +1289,8 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Acquires in shared mode, aborting if interrupted.  Implemented
-     * by first checking interrupt status, then invoking at least once
-     * {@link #tryAcquireShared}, returning on success.  Otherwise the
-     * thread is queued, possibly repeatedly blocking and unblocking,
-     * invoking {@link #tryAcquireShared} until success or the thread
-     * is interrupted.
+     * 以共享模式获取，如果被中断则中止。通过首先检查中断状态，然后至少调用一次{@link tryAcquireShared}来实现，
+     * 并成功返回。否则，线程将排队，可能反复阻塞和解除阻塞，调用{@link tryAcquireShared}直到成功或线程被中断.
      *
      * @param arg the acquire argument.
      *            This value is conveyed to {@link #tryAcquireShared} but is
@@ -1300,13 +1307,9 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Attempts to acquire in shared mode, aborting if interrupted, and
-     * failing if the given timeout elapses.  Implemented by first
-     * checking interrupt status, then invoking at least once {@link
-     * #tryAcquireShared}, returning on success.  Otherwise, the
-     * thread is queued, possibly repeatedly blocking and unblocking,
-     * invoking {@link #tryAcquireShared} until success or the thread
-     * is interrupted or the timeout elapses.
+     * 尝试以共享模式进行获取，如果被中断则中止，如果给定的超时时间过去，则失败。通过首先检查中断状态，
+     * 然后至少调用一次{@link tryAcquireShared}来实现，并成功返回。否则，线程将排队，
+     * 并可能反复阻塞和解除阻塞，调用{@link tryAcquireShared}直到成功或线程被中断或超时为止.
      *
      * @param arg          the acquire argument.  This value is conveyed to
      *                     {@link #tryAcquireShared} but is otherwise uninterpreted
@@ -1333,7 +1336,9 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryReleaseShared}
      */
     public final boolean releaseShared(int arg) {
+        // 尝试释放资源
         if (tryReleaseShared(arg)) {
+            // 唤醒后继结点
             doReleaseShared();
             return true;
         }

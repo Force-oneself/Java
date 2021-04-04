@@ -152,27 +152,24 @@ public class CyclicBarrier {
         boolean broken = false;
     }
 
-    /** The lock for guarding barrier entry */
+    /** 防护栅栏入口的锁 */
     private final ReentrantLock lock = new ReentrantLock();
-    /** Condition to wait on until tripped */
+    /** 等待直到跳闸的条件 */
     private final Condition trip = lock.newCondition();
-    /** The number of parties */
+    /** 参与等待的任务数量 */
     private final int parties;
-    /* The command to run when tripped */
+    /** 所有任务到达等待节点时，执行该命令 */
     private final Runnable barrierCommand;
     /** The current generation */
     private Generation generation = new Generation();
 
     /**
-     * Number of parties still waiting. Counts down from parties to 0
-     * on each generation.  It is reset to parties on each new
-     * generation or when broken.
+     * 仍在等待的参与方数量。从聚会倒数到每一代的0。重置给每个新一代的聚会或坏掉的聚会.
      */
     private int count;
 
     /**
-     * Updates state on barrier trip and wakes up everyone.
-     * Called only while holding lock.
+     * 更新等待节点的状态并唤醒所有人。仅在保持锁定状态下调用.
      */
     private void nextGeneration() {
         // signal completion of last generation
@@ -183,11 +180,11 @@ public class CyclicBarrier {
     }
 
     /**
-     * Sets current barrier generation as broken and wakes up everyone.
-     * Called only while holding lock.
+     * 将当前的等待节点为已破坏并唤醒所有人。仅在保持锁定状态下调用.
      */
     private void breakBarrier() {
         generation.broken = true;
+        // 重置当前等待的任务数，在所有任务都完成后，后续可能还会存在等待节点重复工作
         count = parties;
         trip.signalAll();
     }
@@ -204,21 +201,25 @@ public class CyclicBarrier {
             final Generation g = generation;
 
             if (g.broken)
+                // 状态异常
                 throw new BrokenBarrierException();
-
             if (Thread.interrupted()) {
+                // 已被中断
                 breakBarrier();
                 throw new InterruptedException();
             }
-
+            // 正常执行
             int index = --count;
+            // 最后一个任务道达节点
             if (index == 0) {  // tripped
                 boolean ranAction = false;
                 try {
                     final Runnable command = barrierCommand;
+                    // 所有线程执行到达节点，先执行自定义的任务
                     if (command != null)
                         command.run();
                     ranAction = true;
+                    // 告知前面等待的节点已经完成任务
                     nextGeneration();
                     return 0;
                 } finally {
@@ -227,31 +228,34 @@ public class CyclicBarrier {
                 }
             }
 
-            // loop until tripped, broken, interrupted, or timed out
+            // 循环直到跳闸，断开，中断或超时
             for (;;) {
                 try {
                     if (!timed)
+                        // 不限时等待
                         trip.await();
                     else if (nanos > 0L)
+                        // 限时等待
                         nanos = trip.awaitNanos(nanos);
                 } catch (InterruptedException ie) {
-                    if (g == generation && ! g.broken) {
+                    // 等待节点状态正常处于运行中，自己将中断
+                    if (g == generation && !g.broken) {
                         breakBarrier();
                         throw ie;
                     } else {
-                        // We're about to finish waiting even if we had not
-                        // been interrupted, so this interrupt is deemed to
-                        // "belong" to subsequent execution.
+                        // 等待节点更新或者被破坏都将完成等待
+                        // 即使我们没有被中断，我们也将完成等待，因此该中断被视为“属于”后续执行.
                         Thread.currentThread().interrupt();
                     }
                 }
 
                 if (g.broken)
+                    // 在上面执行过程中出现breakBarrier,则说明执行异常
                     throw new BrokenBarrierException();
-
+                // 在最后一个任务道达等待节点,即可返回当前节点的编号退出循环
                 if (g != generation)
                     return index;
-
+                // 超时
                 if (timed && nanos <= 0L) {
                     breakBarrier();
                     throw new TimeoutException();

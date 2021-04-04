@@ -189,7 +189,7 @@ public class CountDownLatch {
     private final Sync sync;
 
     /**
-     * Constructs a {@code CountDownLatch} initialized with the given count.
+     * 构造一个{@code CountDownLatch}，并使用给定的计数初始化.
      *
      * @param count the number of times {@link #countDown} must be invoked
      *        before threads can pass through {@link #await}
@@ -201,28 +201,21 @@ public class CountDownLatch {
     }
 
     /**
-     * Causes the current thread to wait until the latch has counted down to
-     * zero, unless the thread is {@linkplain Thread#interrupt interrupted}.
+     * 使当前线程等待，直到锁存器计数到零为止，除非该线程{@linkplain Threadinterrupt interrupted}.
      *
-     * <p>If the current count is zero then this method returns immediately.
+     * <p>如果当前计数为零，则此方法立即返回.
      *
-     * <p>If the current count is greater than zero then the current
-     * thread becomes disabled for thread scheduling purposes and lies
-     * dormant until one of two things happen:
+     * <p>如果当前计数大于零，则出于线程调度目的，当前线程将被禁用，并处于休眠状态，直到发生以下两种情况之一：
      * <ul>
-     * <li>The count reaches zero due to invocations of the
-     * {@link #countDown} method; or
-     * <li>Some other thread {@linkplain Thread#interrupt interrupts}
-     * the current thread.
+     *     <li>由于调用{@link countDown}方法而导致计数达到零；或<li>
+     *     某些其他线程{@linkplain Threadinterrupt interrupts}当前线程.
      * </ul>
      *
-     * <p>If the current thread:
+     * <p>如果当前线程:
      * <ul>
-     * <li>has its interrupted status set on entry to this method; or
-     * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
+     * <li>在进入此方法时已设置其中断状态；或<li>在等待时{@linkplain Threadinterrupt被中断},
      * </ul>
-     * then {@link InterruptedException} is thrown and the current thread's
-     * interrupted status is cleared.
+     * then {@link InterruptedException} 被抛出并且当前线程的中断状态被清除.
      *
      * @throws InterruptedException if the current thread is interrupted
      *         while waiting
@@ -292,9 +285,9 @@ public class CountDownLatch {
     }
 
     /**
-     * Returns the current count.
+     * 返回当前计数.
      *
-     * <p>This method is typically used for debugging and testing purposes.
+     * <p>此方法通常用于调试和测试目的.
      *
      * @return the current count
      */
