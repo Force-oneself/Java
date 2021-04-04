@@ -40,51 +40,44 @@ import java.util.stream.Stream;
 
 public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentMap<K, V>, Serializable {
-    private static final long serialVersionUID = 7249069246763182397L;
 
+    private static final long serialVersionUID = 7249069246763182397L;
 
     private static final int MAXIMUM_CAPACITY = 1 << 30;
 
-
     private static final int DEFAULT_CAPACITY = 16;
-
 
     static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-
     private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
-
-
+    // 加载因子
     private static final float LOAD_FACTOR = 0.75f;
-
-
+    // 树化的阈值
     static final int TREEIFY_THRESHOLD = 8;
-
-
+    // 非树化的阈值
     static final int UNTREEIFY_THRESHOLD = 6;
-
-
+    // Node节点最小转换为红黑树的容量，这里指的是Node数组的长度
     static final int MIN_TREEIFY_CAPACITY = 64;
-
-
+    // 扩容时，其他线程辅助扩容的最小步长
     private static final int MIN_TRANSFER_STRIDE = 16;
-
 
     private static int RESIZE_STAMP_BITS = 16;
 
-
     private static final int MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1;
-
 
     private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS;
 
-    static final int MOVED = -1; // hash for forwarding nodes
-    static final int TREEBIN = -2; // hash for roots of trees
-    static final int RESERVED = -3; // hash for transient reservations
-    static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
+    // 用于转发节点的哈希
+    static final int MOVED = -1;
+    // 散列为树的根
+    static final int TREEBIN = -2;
+    // 临时保留的哈希
+    static final int RESERVED = -3;
+    // 普通节点哈希的可用位, 2^31 - 1
+    static final int HASH_BITS = 0x7fffffff;
 
     /**
-     * Number of CPUS, to place bounds on some sizings
+     * CPUS的数量，用于限制某些尺寸
      */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
 
@@ -283,12 +276,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     private transient volatile long baseCount;
 
     /**
-     * Table initialization and resizing control.  When negative, the
-     * table is being initialized or resized: -1 for initialization,
-     * else -(1 + the number of active resizing threads).  Otherwise,
-     * when table is null, holds the initial table size to use upon
-     * creation, or 0 for default. After initialization, holds the
-     * next element count value upon which to resize the table.
+     * 表初始化和大小调整控制。如果为负，则表正在初始化或调整大小：-1表示初始化，
+     * 否则-（1 +活动的调整大小线程数）。否则，当table为null时，保留创建时要使用的初始表大小，
+     * 或者默认为0。初始化后，保留*下一个元素计数值，根据该值可调整表的大小.
      */
     private transient volatile int sizeCtl;
 
@@ -523,8 +513,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 tab = initTable();
                 // 计算新插入数据在数组(HashMap)中的位置，如果该位置上的节点为null，直接放入数据(CAS操作)
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-                if (casTabAt(tab, i, null,
-                        new Node<K, V>(hash, key, value, null)))
+                if (casTabAt(tab, i, null, new Node<K, V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
             // 如果该节点的hash值为MOVED，说明正在进行扩容操作或者已经扩容
@@ -1737,14 +1726,14 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Initializes table, using the size recorded in sizeCtl.
+     * 使用sizeCtl中记录的大小初始化表.
      */
     private final Node<K, V>[] initTable() {
         Node<K, V>[] tab;
         int sc;
         // CAS+自旋，保证线程安全，对数组进行初始化操作
         while ((tab = table) == null || tab.length == 0) {
-            // 如何sizeCtl的值（-1）小于0，说明此时正在初始化，让出cpu
+            // 如果sizeCtl的值（-1）小于0，说明此时正在初始化，让出cpu
             if ((sc = sizeCtl) < 0)
                 Thread.yield(); // lost initialization race; just spin
                 // CAS修改sizeCtl的值为-1，修改成功，进行数组初始化，失败继续自旋
@@ -1757,7 +1746,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         // 基于初始长度，构建数组对象
                                 Node<K, V>[] nt = (Node<K, V>[]) new Node<?, ?>[n];
                         table = tab = nt;
-                        // 计算扩容阈值，并赋值给sc
+                        // 计算扩容阈值，并赋值给sc（3/4 容量）
                         sc = n - (n >>> 2);
                     }
                 } finally {
@@ -1828,7 +1817,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Helps transfer if a resize is in progress.
+     * 如果正在进行调整大小，则有助于传输.
      */
     final Node<K, V>[] helpTransfer(Node<K, V>[] tab, Node<K, V> f) {
         Node<K, V>[] nextTab;
@@ -1908,6 +1897,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
         int n = tab.length, stride;
         // 根据cpu核数计算出步长，用于分割扩容任务，方便其余线程帮助扩容，最小为16
+        // 相当于公式为：n < 128 * NCPU (n>0), (n >>> 3) / NCPU 这步的意思相当于为每个CPU提供8步长的节点
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE;
         // 判断nextTab是否为空，nextTab是暂时存储扩容后的node的数组，第一次进入这个方法的线程才会发现nextTab为空

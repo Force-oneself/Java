@@ -201,6 +201,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
      * 同步对象的非公平锁
      */
     static final class NonfairSync extends Sync {
+
         private static final long serialVersionUID = 7316153563782823691L;
 
         /**
