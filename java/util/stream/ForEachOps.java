@@ -67,8 +67,7 @@ final class ForEachOps {
      * @param <T> the type of the stream elements
      * @return the {@code TerminalOp} instance
      */
-    public static <T> TerminalOp<T, Void> makeRef(Consumer<? super T> action,
-                                                  boolean ordered) {
+    public static <T> TerminalOp<T, Void> makeRef(Consumer<? super T> action, boolean ordered) {
         Objects.requireNonNull(action);
         return new ForEachOp.OfRef<>(action, ordered);
     }
@@ -82,8 +81,7 @@ final class ForEachOps {
      * @param ordered whether an ordered traversal is requested
      * @return the {@code TerminalOp} instance
      */
-    public static TerminalOp<Integer, Void> makeInt(IntConsumer action,
-                                                    boolean ordered) {
+    public static TerminalOp<Integer, Void> makeInt(IntConsumer action, boolean ordered) {
         Objects.requireNonNull(action);
         return new ForEachOp.OfInt(action, ordered);
     }
@@ -97,8 +95,7 @@ final class ForEachOps {
      * @param ordered whether an ordered traversal is requested
      * @return the {@code TerminalOp} instance
      */
-    public static TerminalOp<Long, Void> makeLong(LongConsumer action,
-                                                  boolean ordered) {
+    public static TerminalOp<Long, Void> makeLong(LongConsumer action, boolean ordered) {
         Objects.requireNonNull(action);
         return new ForEachOp.OfLong(action, ordered);
     }
@@ -112,8 +109,7 @@ final class ForEachOps {
      * @param ordered whether an ordered traversal is requested
      * @return the {@code TerminalOp} instance
      */
-    public static TerminalOp<Double, Void> makeDouble(DoubleConsumer action,
-                                                      boolean ordered) {
+    public static TerminalOp<Double, Void> makeDouble(DoubleConsumer action, boolean ordered) {
         Objects.requireNonNull(action);
         return new ForEachOp.OfDouble(action, ordered);
     }
@@ -130,8 +126,7 @@ final class ForEachOps {
      *
      * @param <T> the output type of the stream pipeline
      */
-    static abstract class ForEachOp<T>
-            implements TerminalOp<T, Void>, TerminalSink<T, Void> {
+    static abstract class ForEachOp<T> implements TerminalOp<T, Void>, TerminalSink<T, Void> {
         private final boolean ordered;
 
         protected ForEachOp(boolean ordered) {
@@ -146,14 +141,12 @@ final class ForEachOps {
         }
 
         @Override
-        public <S> Void evaluateSequential(PipelineHelper<T> helper,
-                                           Spliterator<S> spliterator) {
+        public <S> Void evaluateSequential(PipelineHelper<T> helper, Spliterator<S> spliterator) {
             return helper.wrapAndCopyInto(this, spliterator).get();
         }
 
         @Override
-        public <S> Void evaluateParallel(PipelineHelper<T> helper,
-                                         Spliterator<S> spliterator) {
+        public <S> Void evaluateParallel(PipelineHelper<T> helper, Spliterator<S> spliterator) {
             if (ordered)
                 new ForEachOrderedTask<>(helper, spliterator, this).invoke();
             else
@@ -186,8 +179,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code IntStream} */
-        static final class OfInt extends ForEachOp<Integer>
-                implements Sink.OfInt {
+        static final class OfInt extends ForEachOp<Integer> implements Sink.OfInt {
             final IntConsumer consumer;
 
             OfInt(IntConsumer consumer, boolean ordered) {
@@ -207,8 +199,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code LongStream} */
-        static final class OfLong extends ForEachOp<Long>
-                implements Sink.OfLong {
+        static final class OfLong extends ForEachOp<Long> implements Sink.OfLong {
             final LongConsumer consumer;
 
             OfLong(LongConsumer consumer, boolean ordered) {
@@ -228,8 +219,7 @@ final class ForEachOps {
         }
 
         /** Implementation class for {@code DoubleStream} */
-        static final class OfDouble extends ForEachOp<Double>
-                implements Sink.OfDouble {
+        static final class OfDouble extends ForEachOp<Double> implements Sink.OfDouble {
             final DoubleConsumer consumer;
 
             OfDouble(DoubleConsumer consumer, boolean ordered) {
@@ -370,9 +360,7 @@ final class ForEachOps {
         private final ForEachOrderedTask<S, T> leftPredecessor;
         private Node<T> node;
 
-        protected ForEachOrderedTask(PipelineHelper<T> helper,
-                                     Spliterator<S> spliterator,
-                                     Sink<T> action) {
+        protected ForEachOrderedTask(PipelineHelper<T> helper, Spliterator<S> spliterator, Sink<T> action) {
             super(null);
             this.helper = helper;
             this.spliterator = spliterator;
@@ -383,8 +371,7 @@ final class ForEachOps {
             this.leftPredecessor = null;
         }
 
-        ForEachOrderedTask(ForEachOrderedTask<S, T> parent,
-                           Spliterator<S> spliterator,
+        ForEachOrderedTask(ForEachOrderedTask<S, T> parent, Spliterator<S> spliterator,
                            ForEachOrderedTask<S, T> leftPredecessor) {
             super(parent);
             this.helper = parent.helper;

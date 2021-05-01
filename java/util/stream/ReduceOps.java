@@ -102,8 +102,7 @@ final class ReduceOps {
      */
     public static <T> TerminalOp<T, Optional<T>> makeRef(BinaryOperator<T> operator) {
         Objects.requireNonNull(operator);
-        class ReducingSink
-                implements AccumulatingSink<T, Optional<T>, ReducingSink> {
+        class ReducingSink implements AccumulatingSink<T, Optional<T>, ReducingSink> {
             private boolean empty;
             private T state;
 
@@ -154,8 +153,7 @@ final class ReduceOps {
         Supplier<I> supplier = Objects.requireNonNull(collector).supplier();
         BiConsumer<I, ? super T> accumulator = collector.accumulator();
         BinaryOperator<I> combiner = collector.combiner();
-        class ReducingSink extends Box<I>
-                implements AccumulatingSink<T, I, ReducingSink> {
+        class ReducingSink extends Box<I> implements AccumulatingSink<T, I, ReducingSink> {
             @Override
             public void begin(long size) {
                 state = supplier.get();
@@ -171,6 +169,7 @@ final class ReduceOps {
                 state = combiner.apply(state, other.state);
             }
         }
+
         return new ReduceOp<T, I, ReducingSink>(StreamShape.REFERENCE) {
             @Override
             public ReducingSink makeSink() {
@@ -684,14 +683,12 @@ final class ReduceOps {
         }
 
         @Override
-        public <P_IN> R evaluateSequential(PipelineHelper<T> helper,
-                                           Spliterator<P_IN> spliterator) {
+        public <P_IN> R evaluateSequential(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
             return helper.wrapAndCopyInto(makeSink(), spliterator).get();
         }
 
         @Override
-        public <P_IN> R evaluateParallel(PipelineHelper<T> helper,
-                                         Spliterator<P_IN> spliterator) {
+        public <P_IN> R evaluateParallel(PipelineHelper<T> helper, Spliterator<P_IN> spliterator) {
             return new ReduceTask<>(this, helper, spliterator).invoke().get();
         }
     }

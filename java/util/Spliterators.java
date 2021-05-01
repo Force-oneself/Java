@@ -417,8 +417,7 @@ public final class Spliterators {
      */
     public static <T> Spliterator<T> spliterator(Collection<? extends T> c,
                                                  int characteristics) {
-        return new IteratorSpliterator<>(Objects.requireNonNull(c),
-                                         characteristics);
+        return new IteratorSpliterator<>(Objects.requireNonNull(c), characteristics);
     }
 
     /**

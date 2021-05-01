@@ -76,8 +76,7 @@ final class MatchOps {
      * @return a {@code TerminalOp} implementing the desired quantified match
      *         criteria
      */
-    public static <T> TerminalOp<T, Boolean> makeRef(Predicate<? super T> predicate,
-            MatchKind matchKind) {
+    public static <T> TerminalOp<T, Boolean> makeRef(Predicate<? super T> predicate, MatchKind matchKind) {
         Objects.requireNonNull(predicate);
         Objects.requireNonNull(matchKind);
         class MatchSink extends BooleanTerminalSink<T> {
@@ -105,8 +104,7 @@ final class MatchOps {
      * @return a {@code TerminalOp} implementing the desired quantified match
      *         criteria
      */
-    public static TerminalOp<Integer, Boolean> makeInt(IntPredicate predicate,
-                                                       MatchKind matchKind) {
+    public static TerminalOp<Integer, Boolean> makeInt(IntPredicate predicate, MatchKind matchKind) {
         Objects.requireNonNull(predicate);
         Objects.requireNonNull(matchKind);
         class MatchSink extends BooleanTerminalSink<Integer> implements Sink.OfInt {
@@ -134,8 +132,7 @@ final class MatchOps {
      * @return a {@code TerminalOp} implementing the desired quantified match
      *         criteria
      */
-    public static TerminalOp<Long, Boolean> makeLong(LongPredicate predicate,
-                                                     MatchKind matchKind) {
+    public static TerminalOp<Long, Boolean> makeLong(LongPredicate predicate, MatchKind matchKind) {
         Objects.requireNonNull(predicate);
         Objects.requireNonNull(matchKind);
         class MatchSink extends BooleanTerminalSink<Long> implements Sink.OfLong {
@@ -164,8 +161,7 @@ final class MatchOps {
      * @return a {@code TerminalOp} implementing the desired quantified match
      *         criteria
      */
-    public static TerminalOp<Double, Boolean> makeDouble(DoublePredicate predicate,
-                                                         MatchKind matchKind) {
+    public static TerminalOp<Double, Boolean> makeDouble(DoublePredicate predicate, MatchKind matchKind) {
         Objects.requireNonNull(predicate);
         Objects.requireNonNull(matchKind);
         class MatchSink extends BooleanTerminalSink<Double> implements Sink.OfDouble {
@@ -206,9 +202,7 @@ final class MatchOps {
          * @param sinkSupplier {@code Supplier} for a {@code Sink} of the
          *        appropriate shape which implements the matching operation
          */
-        MatchOp(StreamShape shape,
-                MatchKind matchKind,
-                Supplier<BooleanTerminalSink<T>> sinkSupplier) {
+        MatchOp(StreamShape shape, MatchKind matchKind, Supplier<BooleanTerminalSink<T>> sinkSupplier) {
             this.inputShape = shape;
             this.matchKind = matchKind;
             this.sinkSupplier = sinkSupplier;
@@ -225,14 +219,12 @@ final class MatchOps {
         }
 
         @Override
-        public <S> Boolean evaluateSequential(PipelineHelper<T> helper,
-                                              Spliterator<S> spliterator) {
+        public <S> Boolean evaluateSequential(PipelineHelper<T> helper, Spliterator<S> spliterator) {
             return helper.wrapAndCopyInto(sinkSupplier.get(), spliterator).getAndClearState();
         }
 
         @Override
-        public <S> Boolean evaluateParallel(PipelineHelper<T> helper,
-                                            Spliterator<S> spliterator) {
+        public <S> Boolean evaluateParallel(PipelineHelper<T> helper, Spliterator<S> spliterator) {
             // Approach for parallel implementation:
             // - Decompose as per usual
             // - run match on leaf chunks, call result "b"

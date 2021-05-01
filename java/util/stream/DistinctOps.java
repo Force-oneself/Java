@@ -59,8 +59,7 @@ final class DistinctOps {
                 // If the stream is SORTED then it should also be ORDERED so the following will also
                 // preserve the sort order
                 TerminalOp<T, LinkedHashSet<T>> reduceOp
-                        = ReduceOps.<T, LinkedHashSet<T>>makeRef(LinkedHashSet::new, LinkedHashSet::add,
-                                                                 LinkedHashSet::addAll);
+                        = ReduceOps.<T, LinkedHashSet<T>>makeRef(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
                 return Nodes.node(reduceOp.evaluateParallel(helper, spliterator));
             }
 

@@ -208,8 +208,7 @@ public final class Collectors {
      * @return a {@code Collector} which collects all the input elements into a
      * {@code Collection}, in encounter order
      */
-    public static <T, C extends Collection<T>>
-    Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
+    public static <T, C extends Collection<T>> Collector<T, ?, C> toCollection(Supplier<C> collectionFactory) {
         return new CollectorImpl<>(collectionFactory, Collection<T>::add,
                                    (r1, r2) -> { r1.addAll(r2); return r1; },
                                    CH_ID);
@@ -898,8 +897,7 @@ public final class Collectors {
      * @see #groupingByConcurrent(Function, Supplier, Collector)
      */
     public static <T, K, D, A, M extends Map<K, D>>
-    Collector<T, ?, M> groupingBy(Function<? super T, ? extends K> classifier,
-                                  Supplier<M> mapFactory,
+    Collector<T, ?, M> groupingBy(Function<? super T, ? extends K> classifier, Supplier<M> mapFactory,
                                   Collector<? super T, A, D> downstream) {
         Supplier<A> downstreamSupplier = downstream.supplier();
         BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
@@ -1421,8 +1419,7 @@ public final class Collectors {
      * @see #toConcurrentMap(Function, Function, BinaryOperator, Supplier)
      * @see #toMap(Function, Function, BinaryOperator)
      */
-    public static <T, K, U>
-    Collector<T, ?, ConcurrentMap<K,U>>
+    public static <T, K, U> Collector<T, ?, ConcurrentMap<K,U>>
     toConcurrentMap(Function<? super T, ? extends K> keyMapper,
                     Function<? super T, ? extends U> valueMapper,
                     BinaryOperator<U> mergeFunction) {
@@ -1469,8 +1466,7 @@ public final class Collectors {
                                        BinaryOperator<U> mergeFunction,
                                        Supplier<M> mapSupplier) {
         BiConsumer<M, T> accumulator
-                = (map, element) -> map.merge(keyMapper.apply(element),
-                                              valueMapper.apply(element), mergeFunction);
+                = (map, element) -> map.merge(keyMapper.apply(element), valueMapper.apply(element), mergeFunction);
         return new CollectorImpl<>(mapSupplier, accumulator, mapMerger(mergeFunction), CH_CONCURRENT_ID);
     }
 
@@ -1486,8 +1482,7 @@ public final class Collectors {
      * @see #summarizingDouble(ToDoubleFunction)
      * @see #summarizingLong(ToLongFunction)
      */
-    public static <T>
-    Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
+    public static <T> Collector<T, ?, IntSummaryStatistics> summarizingInt(ToIntFunction<? super T> mapper) {
         return new CollectorImpl<T, IntSummaryStatistics, IntSummaryStatistics>(
                 IntSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsInt(t)),
@@ -1506,8 +1501,7 @@ public final class Collectors {
      * @see #summarizingDouble(ToDoubleFunction)
      * @see #summarizingInt(ToIntFunction)
      */
-    public static <T>
-    Collector<T, ?, LongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
+    public static <T> Collector<T, ?, LongSummaryStatistics> summarizingLong(ToLongFunction<? super T> mapper) {
         return new CollectorImpl<T, LongSummaryStatistics, LongSummaryStatistics>(
                 LongSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsLong(t)),
@@ -1526,8 +1520,7 @@ public final class Collectors {
      * @see #summarizingLong(ToLongFunction)
      * @see #summarizingInt(ToIntFunction)
      */
-    public static <T>
-    Collector<T, ?, DoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
+    public static <T> Collector<T, ?, DoubleSummaryStatistics> summarizingDouble(ToDoubleFunction<? super T> mapper) {
         return new CollectorImpl<T, DoubleSummaryStatistics, DoubleSummaryStatistics>(
                 DoubleSummaryStatistics::new,
                 (r, t) -> r.accept(mapper.applyAsDouble(t)),
@@ -1537,9 +1530,7 @@ public final class Collectors {
     /**
      * Implementation class used by partitioningBy.
      */
-    private static final class Partition<T>
-            extends AbstractMap<Boolean, T>
-            implements Map<Boolean, T> {
+    private static final class Partition<T> extends AbstractMap<Boolean, T> implements Map<Boolean, T> {
         final T forTrue;
         final T forFalse;
 

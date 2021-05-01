@@ -54,9 +54,7 @@ import java.util.function.ToLongFunction;
  *
  * @since 1.8
  */
-abstract class ReferencePipeline<P_IN, P_OUT>
-        extends AbstractPipeline<P_IN, P_OUT, Stream<P_OUT>>
-        implements Stream<P_OUT>  {
+abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_OUT, Stream<P_OUT>> implements Stream<P_OUT>  {
 
     /**
      * Constructor for the head of a stream pipeline.
@@ -66,8 +64,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      *        {@link StreamOpFlag}
      * @param parallel {@code true} if the pipeline is parallel
      */
-    ReferencePipeline(Supplier<? extends Spliterator<?>> source,
-                      int sourceFlags, boolean parallel) {
+    ReferencePipeline(Supplier<? extends Spliterator<?>> source, int sourceFlags, boolean parallel) {
         super(source, sourceFlags, parallel);
     }
 
@@ -79,8 +76,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      *        {@link StreamOpFlag}
      * @param parallel {@code true} if the pipeline is parallel
      */
-    ReferencePipeline(Spliterator<?> source,
-                      int sourceFlags, boolean parallel) {
+    ReferencePipeline(Spliterator<?> source, int sourceFlags, boolean parallel) {
         super(source, sourceFlags, parallel);
     }
 
@@ -183,8 +179,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     @SuppressWarnings("unchecked")
     public final <R> Stream<R> map(Function<? super P_OUT, ? extends R> mapper) {
         Objects.requireNonNull(mapper);
-        return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE,
-                                     StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
+        return new StatelessOp<P_OUT, R>(this, StreamShape.REFERENCE, StreamOpFlag.NOT_SORTED | StreamOpFlag.NOT_DISTINCT) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<R> sink) {
                 return new Sink.ChainedReference<P_OUT, R>(sink) {
@@ -545,8 +540,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          * @param sourceFlags the source flags for the stream source, described
          *                    in {@link StreamOpFlag}
          */
-        Head(Supplier<? extends Spliterator<?>> source,
-             int sourceFlags, boolean parallel) {
+        Head(Supplier<? extends Spliterator<?>> source, int sourceFlags, boolean parallel) {
             super(source, sourceFlags, parallel);
         }
 
@@ -557,8 +551,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          * @param sourceFlags the source flags for the stream source, described
          *                    in {@link StreamOpFlag}
          */
-        Head(Spliterator<?> source,
-             int sourceFlags, boolean parallel) {
+        Head(Spliterator<?> source, int sourceFlags, boolean parallel) {
             super(source, sourceFlags, parallel);
         }
 
@@ -602,8 +595,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param <E_OUT> type of elements in produced by this stage
      * @since 1.8
      */
-    abstract static class StatelessOp<E_IN, E_OUT>
-            extends ReferencePipeline<E_IN, E_OUT> {
+    abstract static class StatelessOp<E_IN, E_OUT> extends ReferencePipeline<E_IN, E_OUT> {
         /**
          * Construct a new Stream by appending a stateless intermediate
          * operation to an existing stream.
@@ -612,9 +604,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          * @param inputShape The stream shape for the upstream pipeline stage
          * @param opFlags Operation flags for the new stage
          */
-        StatelessOp(AbstractPipeline<?, E_IN, ?> upstream,
-                    StreamShape inputShape,
-                    int opFlags) {
+        StatelessOp(AbstractPipeline<?, E_IN, ?> upstream, StreamShape inputShape, int opFlags) {
             super(upstream, opFlags);
             assert upstream.getOutputShape() == inputShape;
         }
@@ -632,8 +622,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * @param <E_OUT> type of elements in produced by this stage
      * @since 1.8
      */
-    abstract static class StatefulOp<E_IN, E_OUT>
-            extends ReferencePipeline<E_IN, E_OUT> {
+    abstract static class StatefulOp<E_IN, E_OUT> extends ReferencePipeline<E_IN, E_OUT> {
         /**
          * Construct a new Stream by appending a stateful intermediate operation
          * to an existing stream.
@@ -641,9 +630,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
          * @param inputShape The stream shape for the upstream pipeline stage
          * @param opFlags Operation flags for the new stage
          */
-        StatefulOp(AbstractPipeline<?, E_IN, ?> upstream,
-                   StreamShape inputShape,
-                   int opFlags) {
+        StatefulOp(AbstractPipeline<?, E_IN, ?> upstream, StreamShape inputShape, int opFlags) {
             super(upstream, opFlags);
             assert upstream.getOutputShape() == inputShape;
         }
