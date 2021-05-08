@@ -944,7 +944,9 @@ public final class Spliterators {
                 throw new NullPointerException();
             if ((a = array).length >= (hi = fence) &&
                 (i = index) >= 0 && i < (index = hi)) {
-                do { action.accept((T)a[i]); } while (++i < hi);
+                do {
+                    action.accept((T)a[i]);
+                } while (++i < hi);
             }
         }
 

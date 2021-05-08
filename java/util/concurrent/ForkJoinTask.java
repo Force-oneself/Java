@@ -1,38 +1,3 @@
-/*
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-/*
- *
- *
- *
- *
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package java.util.concurrent;
 
 import java.io.Serializable;
@@ -51,6 +16,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.ReentrantLock;
 import java.lang.reflect.Constructor;
+
+import static java.util.concurrent.ForkJoinPool.*;
 
 /**
  * Abstract base class for tasks that run within a {@link ForkJoinPool}.
@@ -107,7 +74,7 @@ import java.lang.reflect.Constructor;
  * CountedCompleter}) often fall into this category.  (2) To minimize
  * resource impact, tasks should be small; ideally performing only the
  * (possibly) blocking action. (3) Unless the {@link
- * ForkJoinPool.ManagedBlocker} API is used, or the number of possibly
+ * ManagedBlocker} API is used, or the number of possibly
  * blocked tasks is known to be less than the pool's {@link
  * ForkJoinPool#getParallelism} level, the pool cannot guarantee that
  * enough threads will be available to ensure progress or good
@@ -319,29 +286,42 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * Blocks a non-worker-thread until completion.
      * @return status upon completion
      */
+    // 外部线程等待一个common池中的任务完成.
     private int externalAwaitDone() {
         int s = ((this instanceof CountedCompleter) ? // try helping
-                 ForkJoinPool.common.externalHelpComplete(
+                 // 当前task是一个CountedCompleter,尝试使用common ForkJoinPool去外部帮助完成,并将完成状态返回.
+                 common.externalHelpComplete(
                      (CountedCompleter<?>)this, 0) :
-                 ForkJoinPool.common.tryExternalUnpush(this) ? doExec() : 0);
+                 // 当前task不是CountedCompleter,则调用common pool尝试外部弹出该任务并进行执行,
+                 // status赋值doExec函数的结果,若弹出失败(其他线程先行弹出)赋0.
+                 common.tryExternalUnpush(this) ? doExec() : 0);
         if (s >= 0 && (s = status) >= 0) {
+            // 检查上一步的结果,即外部使用common池弹出并执行的结果(不是CountedCompleter的情况),或外部尝试帮助CountedCompleter完成的结果
+            // status大于0表示尝试帮助完成失败.
+            // 扰动标识,初值false
             boolean interrupted = false;
             do {
+                // 循环尝试,先给status标记SIGNAL标识,便于后续唤醒操作.
                 if (U.compareAndSwapInt(this, STATUS, s, s | SIGNAL)) {
                     synchronized (this) {
                         if (status >= 0) {
                             try {
+                                // CAS成功,进同步块发现double check未完成,则等待.
                                 wait(0L);
                             } catch (InterruptedException ie) {
+                                // 若在等待过程中发生了扰动,不停止等待,标记扰动.
                                 interrupted = true;
                             }
                         }
                         else
+                            // 进同步块发现已完成,则唤醒所有等待线程.
                             notifyAll();
                     }
                 }
+                // 循环条件,task未完成.
             } while ((s = status) >= 0);
             if (interrupted)
+                // 循环结束,若循环中间曾有扰动,则中断当前线程
                 Thread.currentThread().interrupt();
         }
         return s;
@@ -356,9 +336,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             throw new InterruptedException();
         if ((s = status) >= 0 &&
             (s = ((this instanceof CountedCompleter) ?
-                  ForkJoinPool.common.externalHelpComplete(
+                  common.externalHelpComplete(
                       (CountedCompleter<?>)this, 0) :
-                  ForkJoinPool.common.tryExternalUnpush(this) ? doExec() :
+                  common.tryExternalUnpush(this) ? doExec() :
                   0)) >= 0) {
             while ((s = status) >= 0) {
                 if (U.compareAndSwapInt(this, STATUS, s, s | SIGNAL)) {
@@ -382,7 +362,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return status upon completion
      */
     private int doJoin() {
-        int s; Thread t; ForkJoinWorkerThread wt; ForkJoinPool.WorkQueue w;
+        int s; Thread t; ForkJoinWorkerThread wt; WorkQueue w;
         return (s = status) < 0 ? s :
             ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?
             (w = (wt = (ForkJoinWorkerThread)t).workQueue).
@@ -696,10 +676,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public final ForkJoinTask<V> fork() {
         Thread t;
+        // 如果当前线程是ForkJoinWorkerThread,将任务压入该线程的任务队列
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             ((ForkJoinWorkerThread)t).workQueue.push(this);
         else
-            ForkJoinPool.common.externalPush(this);
+            // 否则调用common池的externalPush方法入队
+            common.externalPush(this);
         return this;
     }
 
@@ -1036,9 +1018,9 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 s = wt.pool.awaitJoin(wt.workQueue, this, deadline);
             }
             else if ((s = ((this instanceof CountedCompleter) ?
-                           ForkJoinPool.common.externalHelpComplete(
+                           common.externalHelpComplete(
                                (CountedCompleter<?>)this, 0) :
-                           ForkJoinPool.common.tryExternalUnpush(this) ?
+                           common.tryExternalUnpush(this) ?
                            doExec() : 0)) >= 0) {
                 long ns, ms; // measure in nanosecs, but wait in millisecs
                 while ((s = status) >= 0 &&
@@ -1102,7 +1084,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
             wt.pool.helpQuiescePool(wt.workQueue);
         }
         else
-            ForkJoinPool.quiesceCommonPool();
+            quiesceCommonPool();
     }
 
     /**
@@ -1167,7 +1149,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Thread t;
         return (((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) ?
                 ((ForkJoinWorkerThread)t).workQueue.tryUnpush(this) :
-                ForkJoinPool.common.tryExternalUnpush(this));
+                common.tryExternalUnpush(this));
     }
 
     /**
@@ -1179,11 +1161,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the number of tasks
      */
     public static int getQueuedTaskCount() {
-        Thread t; ForkJoinPool.WorkQueue q;
+        Thread t; WorkQueue q;
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
-            q = ForkJoinPool.commonSubmitterQueue();
+            q = commonSubmitterQueue();
         return (q == null) ? 0 : q.queueSize();
     }
 
@@ -1255,11 +1237,11 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the next task, or {@code null} if none are available
      */
     protected static ForkJoinTask<?> peekNextLocalTask() {
-        Thread t; ForkJoinPool.WorkQueue q;
+        Thread t; WorkQueue q;
         if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread)
             q = ((ForkJoinWorkerThread)t).workQueue;
         else
-            q = ForkJoinPool.commonSubmitterQueue();
+            q = commonSubmitterQueue();
         return (q == null) ? null : q.peek();
     }
 

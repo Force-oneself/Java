@@ -407,8 +407,7 @@ public final class Collectors {
      * @param <T> the type of the input elements
      * @return a {@code Collector} that counts the input elements
      */
-    public static <T> Collector<T, ?, Long>
-    counting() {
+    public static <T> Collector<T, ?, Long> counting() {
         return reducing(0L, e -> 1L, Long::sum);
     }
 
@@ -426,8 +425,7 @@ public final class Collectors {
      * @param comparator a {@code Comparator} for comparing elements
      * @return a {@code Collector} that produces the minimal value
      */
-    public static <T> Collector<T, ?, Optional<T>>
-    minBy(Comparator<? super T> comparator) {
+    public static <T> Collector<T, ?, Optional<T>> minBy(Comparator<? super T> comparator) {
         return reducing(BinaryOperator.minBy(comparator));
     }
 
@@ -693,8 +691,7 @@ public final class Collectors {
      * @see #reducing(Object, BinaryOperator)
      * @see #reducing(Object, Function, BinaryOperator)
      */
-    public static <T> Collector<T, ?, Optional<T>>
-    reducing(BinaryOperator<T> op) {
+    public static <T> Collector<T, ?, Optional<T>> reducing(BinaryOperator<T> op) {
         class OptionalBox implements Consumer<T> {
             T value = null;
             boolean present = false;

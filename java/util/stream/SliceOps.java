@@ -116,10 +116,8 @@ final class SliceOps {
         if (skip < 0)
             throw new IllegalArgumentException("Skip must be non-negative: " + skip);
 
-        return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE,
-                                                      flags(limit)) {
-            Spliterator<T> unorderedSkipLimitSpliterator(Spliterator<T> s,
-                                                         long skip, long limit, long sizeIfKnown) {
+        return new ReferencePipeline.StatefulOp<T, T>(upstream, StreamShape.REFERENCE, flags(limit)) {
+            Spliterator<T> unorderedSkipLimitSpliterator(Spliterator<T> s, long skip, long limit, long sizeIfKnown) {
                 if (skip <= sizeIfKnown) {
                     // Use just the limit if the number of elements
                     // to skip is <= the known pipeline size

@@ -155,8 +155,8 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     @Override
     public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
         Objects.requireNonNull(predicate);
-        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
-                                     StreamOpFlag.NOT_SIZED) {
+        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE, StreamOpFlag.NOT_SIZED) {
+
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -357,8 +357,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     @Override
     public final Stream<P_OUT> peek(Consumer<? super P_OUT> action) {
         Objects.requireNonNull(action);
-        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
-                                     0) {
+        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE, 0) {
             @Override
             Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
                 return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
@@ -430,8 +429,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
         // super type of U an ArrayStoreException will be thrown.
         @SuppressWarnings("rawtypes")
         IntFunction rawGenerator = (IntFunction) generator;
-        return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator)
-                              .asArray(rawGenerator);
+        return (A[]) Nodes.flatten(evaluateToArrayNode(rawGenerator), rawGenerator).asArray(rawGenerator);
     }
 
     @Override
@@ -499,9 +497,7 @@ abstract class ReferencePipeline<P_IN, P_OUT> extends AbstractPipeline<P_IN, P_O
     }
 
     @Override
-    public final <R> R collect(Supplier<R> supplier,
-                               BiConsumer<R, ? super P_OUT> accumulator,
-                               BiConsumer<R, R> combiner) {
+    public final <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super P_OUT> accumulator, BiConsumer<R, R> combiner) {
         return evaluate(ReduceOps.makeRef(supplier, accumulator, combiner));
     }
 
