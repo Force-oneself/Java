@@ -126,8 +126,7 @@ public class AtomicStampedReference<V> {
                                      V   newReference,
                                      int expectedStamp,
                                      int newStamp) {
-        return compareAndSet(expectedReference, newReference,
-                             expectedStamp, newStamp);
+        return compareAndSet(expectedReference, newReference, expectedStamp, newStamp);
     }
 
     /**

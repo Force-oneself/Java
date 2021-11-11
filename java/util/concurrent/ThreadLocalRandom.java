@@ -1059,6 +1059,7 @@ public class ThreadLocalRandom extends Random {
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
             Class<?> tk = Thread.class;
+            // 获取的是Thread中threadLocalRandomSeed的偏移量
             SEED = UNSAFE.objectFieldOffset
                 (tk.getDeclaredField("threadLocalRandomSeed"));
             PROBE = UNSAFE.objectFieldOffset

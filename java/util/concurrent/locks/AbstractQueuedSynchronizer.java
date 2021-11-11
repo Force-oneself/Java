@@ -558,7 +558,7 @@ public abstract class AbstractQueuedSynchronizer
     static final long spinForTimeoutThreshold = 1000L;
 
     /**
-     * 将节点插入队列，必要时进行初始化。见上图.
+     * 将节点插入队列，必要时进行初始化
      *
      * @param node the node to insert
      * @return node's predecessor
@@ -594,9 +594,12 @@ public abstract class AbstractQueuedSynchronizer
         // Try the fast path of enq; backup to full enq on failure
         // 尝试快速方式直接放到队尾。
         Node pred = tail;
+        // 队尾元素不为null说明队列已经初始化
         if (pred != null) {
             node.prev = pred;
+            // CAS设置node到CLH的队尾去
             if (compareAndSetTail(pred, node)) {
+                // 将node设置为原先的队尾元素的下一个引用
                 pred.next = node;
                 return node;
             }
@@ -620,7 +623,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Wakes up node's successor, if one exists.
+     * 唤醒节点的后继节点（如果存在）。
      *
      * @param node the node
      */
@@ -673,8 +676,7 @@ public abstract class AbstractQueuedSynchronizer
                         continue;            // loop to recheck cases
                     // 唤醒后继节点
                     unparkSuccessor(h);
-                } else if (ws == 0 &&
-                        !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                } else if (ws == 0 && !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
                     continue;                // loop on failed CAS
             }
             if (h == head)                   // loop if head changed
@@ -711,8 +713,7 @@ public abstract class AbstractQueuedSynchronizer
          * anyway.
          */
         // 如果还有剩余量，继续唤醒下一个邻居线程
-        if (propagate > 0 || h == null || h.waitStatus < 0 ||
-                (h = head) == null || h.waitStatus < 0) {
+        if (propagate > 0 || h == null || h.waitStatus < 0 || (h = head) == null || h.waitStatus < 0) {
             Node s = node.next;
             if (s == null || s.isShared())
                 doReleaseShared();
@@ -843,7 +844,7 @@ public abstract class AbstractQueuedSynchronizer
             boolean interrupted = false;
             // 又是一个“自旋”！
             for (; ; ) {
-                //拿到前驱
+                // 拿到前驱
                 final Node p = node.predecessor();
                 // 如果前驱是head，即该结点已成老二，那么便有资格去尝试获取资源（可能是
                 // 老大释放完资源唤醒自己的，当然也可能被interrupt了）。
@@ -861,8 +862,7 @@ public abstract class AbstractQueuedSynchronizer
                 }
                 // 如果自己可以休息了，就通过park()进入waiting状态，直到被unpark()。
                 // 如果不可中断的情况下被中断了，那么会从park()中醒过来，发现拿不到资源，从而继续进入park()等待。
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        parkAndCheckInterrupt()) {
+                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt()) {
                     // 如果等待过程中被中断过，哪怕只有那么一次，就将interrupted标记为true
                     interrupted = true;
                 }
@@ -892,8 +892,7 @@ public abstract class AbstractQueuedSynchronizer
                     failed = false;
                     return;
                 }
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        parkAndCheckInterrupt())
+                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())
                     throw new InterruptedException();
             }
         } finally {
@@ -909,8 +908,7 @@ public abstract class AbstractQueuedSynchronizer
      * @param nanosTimeout max wait time
      * @return {@code true} if acquired
      */
-    private boolean doAcquireNanos(int arg, long nanosTimeout)
-            throws InterruptedException {
+    private boolean doAcquireNanos(int arg, long nanosTimeout) throws InterruptedException {
         if (nanosTimeout <= 0L)
             return false;
         final long deadline = System.nanoTime() + nanosTimeout;
@@ -928,8 +926,7 @@ public abstract class AbstractQueuedSynchronizer
                 nanosTimeout = deadline - System.nanoTime();
                 if (nanosTimeout <= 0L)
                     return false;
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        nanosTimeout > spinForTimeoutThreshold)
+                if (shouldParkAfterFailedAcquire(p, node) && nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
                     throw new InterruptedException();
@@ -971,8 +968,7 @@ public abstract class AbstractQueuedSynchronizer
                     }
                 }
                 // 判断状态，寻找安全点，进入waiting状态，等着被unpark()或interrupt()
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        parkAndCheckInterrupt())
+                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())
                     interrupted = true;
             }
         } finally {
@@ -1009,8 +1005,7 @@ public abstract class AbstractQueuedSynchronizer
                     }
                 }
                 // 判断状态，寻找安全点，进入waiting状态，等着被unpark()或interrupt()
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        parkAndCheckInterrupt())
+                if (shouldParkAfterFailedAcquire(p, node) && parkAndCheckInterrupt())
                     throw new InterruptedException();
             }
         } finally {
@@ -1048,8 +1043,7 @@ public abstract class AbstractQueuedSynchronizer
                 nanosTimeout = deadline - System.nanoTime();
                 if (nanosTimeout <= 0L)
                     return false;
-                if (shouldParkAfterFailedAcquire(p, node) &&
-                        nanosTimeout > spinForTimeoutThreshold)
+                if (shouldParkAfterFailedAcquire(p, node) && nanosTimeout > spinForTimeoutThreshold)
                     LockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
                     throw new InterruptedException();
@@ -1200,7 +1194,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * 以独占模式获取，忽略中断.  通过至少调用一次实现{@link #tryAcquire},
-     * 返回成功。否则，线程将排队，可能*反复阻塞和解除阻塞, 调用{@link  #tryAcquire}直到成功.
+     * 返回成功。否则，线程将排队，可能反复阻塞和解除阻塞, 调用{@link  #tryAcquire}直到成功.
      * 此方法可用于实现方法 {@link Lock#lock}.
      *
      * @param arg 获取参数。此值传送给 {@link #tryAcquire}，但否则未解释，并且可以表示您喜欢的任何内容.
@@ -1249,8 +1243,7 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
-        return tryAcquire(arg) ||
-                doAcquireNanos(arg, nanosTimeout);
+        return tryAcquire(arg) || doAcquireNanos(arg, nanosTimeout);
     }
 
     /**
@@ -1322,8 +1315,7 @@ public abstract class AbstractQueuedSynchronizer
             throws InterruptedException {
         if (Thread.interrupted())
             throw new InterruptedException();
-        return tryAcquireShared(arg) >= 0 ||
-                doAcquireSharedNanos(arg, nanosTimeout);
+        return tryAcquireShared(arg) >= 0 || doAcquireSharedNanos(arg, nanosTimeout);
     }
 
     /**
@@ -1460,10 +1452,10 @@ public abstract class AbstractQueuedSynchronizer
      */
     final boolean apparentlyFirstQueuedIsExclusive() {
         Node h, s;
-        return (h = head) != null &&
-                (s = h.next) != null &&
-                !s.isShared() &&
-                s.thread != null;
+        return (h = head) != null
+                && (s = h.next) != null
+                && !s.isShared()
+                && s.thread != null;
     }
 
     /**

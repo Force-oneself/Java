@@ -151,7 +151,9 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
 
         protected final boolean tryRelease(int releases) {
+            // 当前线程数-释放数
             int c = getState() - releases;
+            // 当前线程不是此时拥有权限的线程则抛出异常
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
@@ -174,7 +176,6 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
 
         // 从外部类继承的方法
-
         final Thread getOwner() {
             return getState() == 0 ? null : getExclusiveOwnerThread();
         }
@@ -209,7 +210,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          */
         final void lock() {
             // 先使用cas快速抢占，成功就直接将可重入对象设置为自己，反之从队列中取
-            if (compareAndSetState(0, 1)) // 非公平锁的体现
+            // 非公平锁的体现
+            if (compareAndSetState(0, 1))
                 setExclusiveOwnerThread(Thread.currentThread());
             else
                 acquire(1);

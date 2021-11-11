@@ -518,6 +518,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             }
             // 如果该节点的hash值为MOVED，说明正在进行扩容操作或者已经扩容
             else if ((fh = f.hash) == MOVED)
+                // 协助扩容
                 tab = helpTransfer(tab, f);
             else {
                 V oldVal = null;
@@ -532,8 +533,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 K ek;
                                 // 如果新插入值和tab[i]处的hash值和key值一样，进行替换
                                 if (e.hash == hash &&
-                                        ((ek = e.key) == key ||
-                                                (ek != null && key.equals(ek)))) {
+                                        ((ek = e.key) == key || (ek != null && key.equals(ek)))) {
                                     oldVal = e.val;
                                     if (!onlyIfAbsent)
                                         e.val = value;
@@ -542,8 +542,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 Node<K, V> pred = e;
                                 // 如果此节点为尾部节点，把此节点的next引用指向新数据节点
                                 if ((e = e.next) == null) {
-                                    pred.next = new Node<K, V>(hash, key,
-                                            value, null);
+                                    pred.next = new Node<K, V>(hash, key, value, null);
                                     break;
                                 }
                             }
@@ -551,8 +550,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         } else if (f instanceof TreeBin) {
                             Node<K, V> p;
                             binCount = 2;
-                            if ((p = ((TreeBin<K, V>) f).putTreeVal(hash, key,
-                                    value)) != null) {
+                            if ((p = ((TreeBin<K, V>) f).putTreeVal(hash, key, value)) != null) {
                                 oldVal = p.val;
                                 if (!onlyIfAbsent)
                                     p.val = value;
@@ -2195,9 +2193,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     if (tabAt(tab, index) == b) {
                         TreeNode<K, V> hd = null, tl = null;
                         for (Node<K, V> e = b; e != null; e = e.next) {
-                            TreeNode<K, V> p =
-                                    new TreeNode<K, V>(e.hash, e.key, e.val,
-                                            null, null);
+                            TreeNode<K, V> p = new TreeNode<K, V>(e.hash, e.key, e.val, null, null);
                             if ((p.prev = tl) == null)
                                 hd = p;
                             else

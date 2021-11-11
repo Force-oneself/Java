@@ -246,8 +246,7 @@ public class Semaphore implements java.io.Serializable {
                     return -1;
                 int available = getState();
                 int remaining = available - acquires;
-                if (remaining < 0 ||
-                    compareAndSetState(available, remaining))
+                if (remaining < 0 || compareAndSetState(available, remaining))
                     return remaining;
             }
         }

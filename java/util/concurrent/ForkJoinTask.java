@@ -216,12 +216,44 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
     /** The run status of this task */
     volatile int status; // accessed directly by pool and workers
+    /**
+     * 1111 0000 0000 0000 0000 0000 0000 0000
+     */
     static final int DONE_MASK   = 0xf0000000;  // mask out non-completion bits
+    /**
+     * 高四位为完成状态位
+     */
+
+    /**
+     * 1111 0000 0000 0000 0000 0000 0000 0000
+     */
     static final int NORMAL      = 0xf0000000;  // must be negative
+    /**
+     * 1100 0000 0000 0000 0000 0000 0000 0000
+     */
     static final int CANCELLED   = 0xc0000000;  // must be < NORMAL
+    /**
+     * 1000 0000 0000 0000 0000 0000 0000 0000
+     */
     static final int EXCEPTIONAL = 0x80000000;  // must be < CANCELLED
+
+    /**
+     * 中5-17位为信号量, 代表任务数共享独占资源
+     */
+
+    /**
+     * 0000 0000 0000 0001 0000 0000 0000 0000
+     */
     static final int SIGNAL      = 0x00010000;  // must be >= 1 << 16
-    static final int SMASK       = 0x0000ffff;  // short bits for tags
+
+    /**
+     * 低16位设置任务标签，SMASK二进制运算的掩码
+     */
+
+    /**
+     * 0000 0000 0000 0000 1111 1111 1111 1111
+     */
+    static final int SMASK       = 0x0000ffff;
 
     /**
      * Marks completion and wakes up threads waiting to join this

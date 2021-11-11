@@ -1337,7 +1337,7 @@ public class ArrayList<E> extends AbstractList<E>
 
         public ArrayListSpliterator<E> trySplit() {
             int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
-            return (lo >= mid) ? null : // divide range in half unless too small
+            return (lo >= mid) ? null : // 除非太小，否则将范围分成两半
                 new ArrayListSpliterator<E>(list, lo, index = mid,
                                             expectedModCount);
         }

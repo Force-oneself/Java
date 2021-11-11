@@ -289,18 +289,38 @@ abstract class AbstractTask<P_IN, P_OUT, R,
      */
     @Override
     public void compute() {
+        // 将当前这个spliterator作为右节点（此时为root节点）
         Spliterator<P_IN> rs = spliterator, ls; // right, left spliterators
         long sizeEstimate = rs.estimateSize();
         long sizeThreshold = getTargetSize(sizeEstimate);
         boolean forkRight = false;
+        // root节点
         @SuppressWarnings("unchecked") K task = (K) this;
+        // spliterator开始切片
+        // 细节不多赘述，下面我用图来讲解算法
+        /**
+         * 根节点指定为：右边节点
+         *              root
+         *              split()
+         *    left               right
+         * left.fork()
+         *                       split()
+         *                   l            r
+         *            rs = ls
+         *                      right.fork()
+         *    split()
+         * l           r
+         *    l.fork()
+         */
         while (sizeEstimate > sizeThreshold && (ls = rs.trySplit()) != null) {
             K leftChild, rightChild, taskToFork;
             task.leftChild  = leftChild = task.makeChild(ls);
             task.rightChild = rightChild = task.makeChild(rs);
             task.setPendingCount(1);
+            // 左右轮流fork
             if (forkRight) {
                 forkRight = false;
+                // 左右节点切换进行fork和split
                 rs = ls;
                 task = leftChild;
                 taskToFork = rightChild;
@@ -310,10 +330,13 @@ abstract class AbstractTask<P_IN, P_OUT, R,
                 task = rightChild;
                 taskToFork = leftChild;
             }
+            // fork任务加入队列中去
             taskToFork.fork();
             sizeEstimate = rs.estimateSize();
         }
+        // 将执行doLeaf底层就是单个串行流的操作
         task.setLocalResult(task.doLeaf());
+        // 将结果组合成一个最终结果
         task.tryComplete();
     }
 

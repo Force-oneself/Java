@@ -716,16 +716,19 @@ final class ReduceOps {
 
         @Override
         protected ReduceTask<P_IN, P_OUT, R, S> makeChild(Spliterator<P_IN> spliterator) {
+            // 任务分片后创建任务
             return new ReduceTask<>(this, spliterator);
         }
 
         @Override
         protected S doLeaf() {
+            // 串行流执行一样的
             return helper.wrapAndCopyInto(op.makeSink(), spliterator);
         }
 
         @Override
         public void onCompletion(CountedCompleter<?> caller) {
+            // 非叶子节点，组合结果
             if (!isLeaf()) {
                 S leftResult = leftChild.getLocalResult();
                 leftResult.combine(rightChild.getLocalResult());
