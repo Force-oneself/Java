@@ -213,8 +213,8 @@ import java.util.Collection;
  * @author Doug Lea
  * @since 1.5
  */
-public class ReentrantReadWriteLock
-        implements ReadWriteLock, java.io.Serializable {
+public class ReentrantReadWriteLock implements ReadWriteLock, java.io.Serializable {
+
     private static final long serialVersionUID = -6992448646407690164L;
     /**
      * 提供读锁的内部类
@@ -264,29 +264,44 @@ public class ReentrantReadWriteLock
     abstract static class Sync extends AbstractQueuedSynchronizer {
         private static final long serialVersionUID = 6317671515068378041L;
 
-        /*
-         * Read vs write count extraction constants and functions.
-         * Lock state is logically divided into two unsigned shorts:
-         * The lower one representing the exclusive (writer) lock hold count,
-         * and the upper the shared (reader) hold count.
+        /**
+         * 读取与写入计数提取常量和函数。锁定状态在逻辑上分为两个无符号shorts：
+         * 较低的一个代表独占（写入者）锁持有计数，和共享（读者）持有计数的上限.
+         *
+         * 高16位代表读状态 ，低16位代表写可重入次数
          */
-
         static final int SHARED_SHIFT = 16;
+
+        /**
+         * 共享锁（读锁）状态：65536：0001 0000 0000 0000 0000
+         */
         static final int SHARED_UNIT = (1 << SHARED_SHIFT);
+
+        /**
+         * 共享锁最大线程数65535：0000 1111 1111 1111 1111
+         */
         static final int MAX_COUNT = (1 << SHARED_SHIFT) - 1;
+
+        /**
+         *  排它锁（写锁）掩码，16个1：0000 1111 1111 1111 1111
+         */
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
 
         /**
+         * 返回读锁线程数
          * Returns the number of shared holds represented in count
          */
         static int sharedCount(int c) {
+            // 无符号右移16位，返回高位数
             return c >>> SHARED_SHIFT;
         }
 
         /**
+         * 返回写锁可重入数
          * Returns the number of exclusive holds represented in count
          */
         static int exclusiveCount(int c) {
+            // 与操作返回低位数
             return c & EXCLUSIVE_MASK;
         }
 
@@ -304,8 +319,7 @@ public class ReentrantReadWriteLock
          * ThreadLocal subclass. Easiest to explicitly define for sake
          * of deserialization mechanics.
          */
-        static final class ThreadLocalHoldCounter
-                extends ThreadLocal<HoldCounter> {
+        static final class ThreadLocalHoldCounter extends ThreadLocal<HoldCounter> {
             public HoldCounter initialValue() {
                 return new HoldCounter();
             }
@@ -353,6 +367,10 @@ public class ReentrantReadWriteLock
          * locks to be very cheap.
          */
         private transient Thread firstReader = null;
+
+        /**
+         * 记录第一个获取到读锁的线程获取读锁的可重入次数
+         */
         private transient int firstReaderHoldCount;
 
         Sync() {
@@ -388,10 +406,13 @@ public class ReentrantReadWriteLock
          */
 
         protected final boolean tryRelease(int releases) {
+            // 看是否是写锁的拥有者调用
             if (!isHeldExclusively())
                 throw new IllegalMonitorStateException();
+            // 获取可重入值，这里没有考虑高16位，因为获取写锁时读锁状态值肯定为0
             int nextc = getState() - releases;
             boolean free = exclusiveCount(nextc) == 0;
+            // 如果写锁可重入值为0则释放锁，否则只是简单的更新状态值
             if (free)
                 setExclusiveOwnerThread(null);
             setState(nextc);
@@ -413,18 +434,22 @@ public class ReentrantReadWriteLock
             Thread current = Thread.currentThread();
             int c = getState();
             int w = exclusiveCount(c);
+            // c != 0说明读锁或者写锁已经被某个线程获取
             if (c != 0) {
                 // (Note: if c != 0 and w == 0 then shared count != 0)
+                // w = 0 说明已经有线程获取了读锁，w != 0 并且当前线程不是写锁拥有者, 则返回false
                 if (w == 0 || current != getExclusiveOwnerThread())
                     return false;
+                // 说明当前线程获取了写锁，判断可重入次数
                 if (w + exclusiveCount(acquires) > MAX_COUNT)
                     throw new Error("Maximum lock count exceeded");
                 // Reentrant acquire
+                // 设置可重入次数
                 setState(c + acquires);
                 return true;
             }
-            if (writerShouldBlock() ||
-                    !compareAndSetState(c, c + acquires))
+            // 第一个写线程获取写锁
+            if (writerShouldBlock() || !compareAndSetState(c, c + acquires))
                 return false;
             setExclusiveOwnerThread(current);
             return true;

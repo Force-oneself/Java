@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
@@ -150,8 +151,8 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * actions following a successful return from a corresponding
  * {@code await()} in another thread.
  *
- * @since 1.5
  * @author Doug Lea
+ * @since 1.5
  */
 public class CountDownLatch {
     /**
@@ -170,16 +171,25 @@ public class CountDownLatch {
         }
 
         protected int tryAcquireShared(int acquires) {
+            // 当state递减到0时，返回负数即可使当前线程进入CLH队列
             return (getState() == 0) ? 1 : -1;
         }
 
+        /**
+         * 当state递减到0时说明所有线程已经执行完毕，
+         * 返回true使CLH队列里线程阻塞被唤醒
+         *
+         * @param releases 无意义
+         * @return 是否
+         */
         protected boolean tryReleaseShared(int releases) {
             // Decrement count; signal when transition to zero
-            for (;;) {
+            // 递减计数；过渡到零时的信号
+            for (; ; ) {
                 int c = getState();
                 if (c == 0)
                     return false;
-                int nextc = c-1;
+                int nextc = c - 1;
                 if (compareAndSetState(c, nextc))
                     return nextc == 0;
             }
@@ -192,7 +202,7 @@ public class CountDownLatch {
      * 构造一个{@code CountDownLatch}，并使用给定的计数初始化.
      *
      * @param count the number of times {@link #countDown} must be invoked
-     *        before threads can pass through {@link #await}
+     *              before threads can pass through {@link #await}
      * @throws IllegalArgumentException if {@code count} is negative
      */
     public CountDownLatch(int count) {
@@ -218,7 +228,7 @@ public class CountDownLatch {
      * then {@link InterruptedException} 被抛出并且当前线程的中断状态被清除.
      *
      * @throws InterruptedException if the current thread is interrupted
-     *         while waiting
+     *                              while waiting
      */
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
@@ -259,14 +269,14 @@ public class CountDownLatch {
      * will not wait at all.
      *
      * @param timeout the maximum time to wait
-     * @param unit the time unit of the {@code timeout} argument
+     * @param unit    the time unit of the {@code timeout} argument
      * @return {@code true} if the count reached zero and {@code false}
-     *         if the waiting time elapsed before the count reached zero
+     * if the waiting time elapsed before the count reached zero
      * @throws InterruptedException if the current thread is interrupted
-     *         while waiting
+     *                              while waiting
      */
     public boolean await(long timeout, TimeUnit unit)
-        throws InterruptedException {
+            throws InterruptedException {
         return sync.tryAcquireSharedNanos(1, unit.toNanos(timeout));
     }
 

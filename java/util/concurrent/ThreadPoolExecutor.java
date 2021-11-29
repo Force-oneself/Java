@@ -342,8 +342,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * below).
      */
     private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
+
     // Integer.SIZE - 3 = 29
     private static final int COUNT_BITS = Integer.SIZE - 3;
+
     // 2^29 - 1 = 536870911  0001 1111 1111 1111 1111 1111 1111 1111
     private static final int CAPACITY = (1 << COUNT_BITS) - 1;
 
@@ -354,21 +356,25 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * 1110 0000 0000 0000 0000 0000 0000 0000 --> 111
      */
     private static final int RUNNING = -1 << COUNT_BITS;
+
     /**
      * 关闭状态,不在接受新提交的任务,但却可以继续处理阻塞队列中已保存的任务
      * 000 0 0000 0000 0000 0000 0000 0000 0000 --> 000
      */
     private static final int SHUTDOWN = 0 << COUNT_BITS;
+
     /**
      * 不能接受新任务,也不处理队列中任务,会中断正在处理任务的线程
      * 001 0 0000 0000 0000 0000 0000 0000 0000 --> 001
      */
     private static final int STOP = 1 << COUNT_BITS;
+
     /**
      * 所有的任务都已终止了,workerCount(有效线程数)为0
      * 010 0 0000 0000 0000 0000 0000 0000 0000 --> 010
      */
     private static final int TIDYING = 2 << COUNT_BITS;
+
     /**
      * 在terminated()方法执行完后进入该状态
      * 011 0 0000 0000 0000 0000 0000 0000 0000 --> 011
@@ -376,7 +382,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     private static final int TERMINATED = 3 << COUNT_BITS;
 
     // Packing and unpacking ctl
-    //计算当前运行状态
+    // 计算当前运行状态
     private static int runStateOf(int c) {
         // CAPACITY取反 与 c  0010 0000 0000 0000 0000 0000 0000 0000
         return c & ~CAPACITY;

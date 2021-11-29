@@ -157,6 +157,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
+            // 当前可重入次数为0，则清空锁持有线程
             if (c == 0) {
                 free = true;
                 setExclusiveOwnerThread(null);
@@ -242,8 +243,8 @@ public class ReentrantLock implements Lock, java.io.Serializable {
             int c = getState();
             if (c == 0) {
                 // 检查队列是否轮到自己执行了
-                if (!hasQueuedPredecessors() &&
-                        compareAndSetState(0, acquires)) {
+                if (!hasQueuedPredecessors()
+                        && compareAndSetState(0, acquires)) {
                     // 设置cas的头对象可重入Thread
                     setExclusiveOwnerThread(current);
                     return true;

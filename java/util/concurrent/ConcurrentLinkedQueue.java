@@ -324,18 +324,24 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
+        // 空校验
         checkNotNull(e);
+        // 构造一个新的节点，内部调用unsafe.putObject
         final Node<E> newNode = new Node<E>(e);
-
+        // 从尾节点开始插入
         for (Node<E> t = tail, p = t;;) {
             Node<E> q = p.next;
+            // q == null 说明 p 是尾节点
             if (q == null) {
                 // p is last node
+                // 使用CAS设置到p.next节点
                 if (p.casNext(null, newNode)) {
                     // Successful CAS is the linearization point
                     // for e to become an element of this queue,
                     // and for newNode to become "live".
+                    // CAS 成功，则说明新增节点已经被放入链表，然后设置当前尾节点（包含head ，第 l , 3 , s .个节点为尾节点）
                     if (p != t) // hop two nodes at a time
+                        // 设置到尾节点
                         casTail(t, newNode);  // Failure is OK.
                     return true;
                 }
@@ -346,9 +352,12 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
                 // will also be off-list, in which case we need to
                 // jump to head, from which all live nodes are always
                 // reachable.  Else the new tail is a better bet.
+                // 多线程操作时，由于 poll 操作移除元素后可能会把head 变为自引用，
+                // 也就是head next 成 head ，所以这里需妥重新找新的 head
                 p = (t != (t = tail)) ? t : head;
             else
                 // Check for tail updates after two hops.
+                // 寻找尾节点
                 p = (p != t && t != (t = tail)) ? t : q;
         }
     }
@@ -357,19 +366,24 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
         restartFromHead:
         for (;;) {
             for (Node<E> h = head, p = h, q;;) {
+                // 保存当前节点值
                 E item = p.item;
 
+                // 将当前节点的值CAS转为null
                 if (item != null && p.casItem(item, null)) {
                     // Successful CAS is the linearization point
                     // for item to be removed from this queue.
                     if (p != h) // hop two nodes at a time
+                        // 设置p.next为新的头节点
                         updateHead(h, ((q = p.next) != null) ? q : p);
                     return item;
                 }
+                // 当前队列为空则放回null
                 else if ((q = p.next) == null) {
                     updateHead(h, p);
                     return null;
                 }
+                // 引用自身，需要重新寻找新的队列头节点
                 else if (p == q)
                     continue restartFromHead;
                 else

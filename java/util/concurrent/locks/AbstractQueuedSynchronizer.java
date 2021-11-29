@@ -669,6 +669,7 @@ public abstract class AbstractQueuedSynchronizer
          */
         for (; ; ) {
             Node h = head;
+            // head == null 或者 head == tail 说明没有节点存在队列中了
             if (h != null && h != tail) {
                 int ws = h.waitStatus;
                 if (ws == Node.SIGNAL) {
@@ -773,7 +774,7 @@ public abstract class AbstractQueuedSynchronizer
 
     /**
      * 检查并更新无法获取的节点的状态。 如果线程应阻塞，则返回true。
-     * 这是所有采集循环中的主要信号*控制。要求pred == node.prev.
+     * 这是所有采集循环中的主要信号控制。要求pred == node.prev.
      *
      * @param pred node's predecessor holding status
      * @param node the node
@@ -1040,6 +1041,7 @@ public abstract class AbstractQueuedSynchronizer
                         return true;
                     }
                 }
+                // 超时
                 nanosTimeout = deadline - System.nanoTime();
                 if (nanosTimeout <= 0L)
                     return false;
@@ -1293,6 +1295,7 @@ public abstract class AbstractQueuedSynchronizer
      */
     public final void acquireSharedInterruptibly(int arg)
             throws InterruptedException {
+        // 线程已经中断过
         if (Thread.interrupted())
             throw new InterruptedException();
         if (tryAcquireShared(arg) < 0)
@@ -1510,9 +1513,9 @@ public abstract class AbstractQueuedSynchronizer
         Node s;
         // 为true说明在当前状态中存在一个前置Waiter排在前面等待
         // h != t 说明队列不为空；
-        return h != t &&
+        return h != t
                 // 下一个Waiter的线程是不是自己
-                ((s = h.next) == null || s.thread != Thread.currentThread());
+                && ((s = h.next) == null || s.thread != Thread.currentThread());
     }
 
 
@@ -1709,8 +1712,7 @@ public abstract class AbstractQueuedSynchronizer
     }
 
     /**
-     * Invokes release with current state value; returns saved state.
-     * Cancels node and throws exception on failure.
+     * 使用当前状态值调用 release； 返回保存状态。 取消节点并在失败时抛出异常。
      *
      * @param node the condition node for this wait
      * @return previous sync state
@@ -1878,8 +1880,7 @@ public abstract class AbstractQueuedSynchronizer
                 if ((firstWaiter = first.nextWaiter) == null)
                     lastWaiter = null;
                 first.nextWaiter = null;
-            } while (!transferForSignal(first) &&
-                    (first = firstWaiter) != null);
+            } while (!transferForSignal(first) && (first = firstWaiter) != null);
         }
 
         /**
