@@ -599,58 +599,70 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Implementation for the four public remove/replace methods:
-     * Replaces node value with v, conditional upon match of cv if
-     * non-null.  If resulting value is null, delete.
+     * 四个公共 removereplace 方法的实现： 用 v 替换节点值，条件是 cv 如果非空匹配。如果结果值为空，则删除
      */
     final V replaceNode(Object key, V value, Object cv) {
+        // hash获取键值
         int hash = spread(key.hashCode());
+        // 死循环
         for (Node<K, V>[] tab = table; ; ) {
+            // 需要替换的Node
             Node<K, V> f;
+            // n: 数组长度，i: Node下标, n: Node的hash值
             int n, i, fh;
-            if (tab == null || (n = tab.length) == 0 ||
-                    (f = tabAt(tab, i = (n - 1) & hash)) == null)
+            // 数组为空，长度为0，所在value为null都将结束循环
+            if (tab == null || (n = tab.length) == 0 || (f = tabAt(tab, i = (n - 1) & hash)) == null)
                 break;
+            // 节点在扩容
             else if ((fh = f.hash) == MOVED)
+                // 帮助扩容
                 tab = helpTransfer(tab, f);
             else {
                 V oldVal = null;
                 boolean validated = false;
                 synchronized (f) {
+                    // 双重校验value值有没有被改写
                     if (tabAt(tab, i) == f) {
+                        // 节点的hash大于0，说明该节点是正常可操作的
                         if (fh >= 0) {
                             validated = true;
-                            for (Node<K, V> e = f, pred = null; ; ) {
-                                K ek;
-                                if (e.hash == hash &&
-                                        ((ek = e.key) == key ||
-                                                (ek != null && key.equals(ek)))) {
-                                    V ev = e.val;
-                                    if (cv == null || cv == ev ||
-                                            (ev != null && cv.equals(ev))) {
-                                        oldVal = ev;
+                            // 死循环
+                            for (Node<K, V> curNode = f, pred = null; ; ) {
+                                K curKey;
+                                // 当前e的hash与外面key的hash一致，并且key值也相等
+                                if (curNode.hash == hash && ((curKey = curNode.key) == key
+                                        // 当前Node的key与外面传进来的key一致
+                                        || (curKey != null && key.equals(curKey)))) {
+                                    // 当前Node的value
+                                    V curValue = curNode.val;
+                                    if (cv == null || cv == curValue || (curValue != null && cv.equals(curValue))) {
+                                        oldVal = curValue;
                                         if (value != null)
-                                            e.val = value;
+                                            // 替换旧值
+                                            curNode.val = value;
                                         else if (pred != null)
-                                            pred.next = e.next;
+                                            // 将当前节点的next引用指向前一个节点
+                                            pred.next = curNode.next;
                                         else
-                                            setTabAt(tab, i, e.next);
+                                            // 将原来节点剔除
+                                            setTabAt(tab, i, curNode.next);
                                     }
                                     break;
                                 }
-                                pred = e;
-                                if ((e = e.next) == null)
+                                // 保存上一个节点
+                                pred = curNode;
+                                // 遍历下一个节点
+                                if ((curNode = curNode.next) == null)
                                     break;
                             }
+                            // 红黑树的处理
                         } else if (f instanceof TreeBin) {
                             validated = true;
                             TreeBin<K, V> t = (TreeBin<K, V>) f;
                             TreeNode<K, V> r, p;
-                            if ((r = t.root) != null &&
-                                    (p = r.findTreeNode(hash, key, null)) != null) {
+                            if ((r = t.root) != null && (p = r.findTreeNode(hash, key, null)) != null) {
                                 V pv = p.val;
-                                if (cv == null || cv == pv ||
-                                        (pv != null && cv.equals(pv))) {
+                                if (cv == null || cv == pv || (pv != null && cv.equals(pv))) {
                                     oldVal = pv;
                                     if (value != null)
                                         p.val = value;
@@ -692,9 +704,9 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             } else {
                 synchronized (f) {
                     if (tabAt(tab, i) == f) {
-                        Node<K, V> p = (fh >= 0 ? f :
-                                (f instanceof TreeBin) ?
-                                        ((TreeBin<K, V>) f).first : null);
+                        Node<K, V> p = (fh >= 0
+                                ? f
+                                : (f instanceof TreeBin) ? ((TreeBin<K, V>) f).first : null);
                         while (p != null) {
                             --delta;
                             p = p.next;

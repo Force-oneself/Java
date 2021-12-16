@@ -39,14 +39,10 @@ import java.lang.annotation.AnnotationFormatError;
 import java.nio.ByteBuffer;
 
 /**
- * A {@code Method} provides information about, and access to, a single method
- * on a class or interface.  The reflected method may be a class method
- * or an instance method (including an abstract method).
- *
- * <p>A {@code Method} permits widening conversions to occur when matching the
- * actual parameters to invoke with the underlying method's formal
- * parameters, but it throws an {@code IllegalArgumentException} if a
- * narrowing conversion would occur.
+ * {@code Method} 提供有关类或接口上的单个方法的信息和访问权限。
+ * 反映的方法可以是类方法或实例方法（包括抽象方法）。
+ * <p>{@code Method} 允许在将要调用的实际参数与底层方法的形式参数进行匹配时进行扩展转换，
+ * 但如果发生缩小转换，则会抛出 {@code IllegalArgumentException}.
  *
  * @see Member
  * @see java.lang.Class
@@ -68,47 +64,44 @@ public final class Method extends Executable {
     private Class<?>[]          parameterTypes;
     private Class<?>[]          exceptionTypes;
     private int                 modifiers;
-    // Generics and annotations support
+    // 泛型和注释支持
     private transient String              signature;
-    // generic info repository; lazily initialized
+    // 通用信息存储库；延迟初始化
     private transient MethodRepository genericInfo;
     private byte[]              annotations;
     private byte[]              parameterAnnotations;
     private byte[]              annotationDefault;
     private volatile MethodAccessor methodAccessor;
-    // For sharing of MethodAccessors. This branching structure is
-    // currently only two levels deep (i.e., one root Method and
-    // potentially many Method objects pointing to it.)
-    //
-    // If this branching structure would ever contain cycles, deadlocks can
-    // occur in annotation code.
+    // 用于共享 MethodAccessors。这个分支结构目前只有两层深
+    //（即，一个根 Method 和可能指向它的许多 Method 对象。）
+
+    // 如果此分支结构包含循环，则注释代码中可能会发生死锁.
     private Method              root;
 
-    // Generics infrastructure
+    // 泛型基础设施
     private String getGenericSignature() {return signature;}
 
-    // Accessor for factory
+    // 工厂配件
     private GenericsFactory getFactory() {
-        // create scope and factory
+        // 创建范围和工厂
         return CoreReflectionFactory.make(this, MethodScope.make(this));
     }
 
-    // Accessor for generic info repository
+    // 通用信息存储库的访问器
     @Override
     MethodRepository getGenericInfo() {
-        // lazily initialize repository if necessary
+        // 如有必要，延迟初始化存储库
         if (genericInfo == null) {
-            // create and cache generic info repository
+            // 创建和缓存通用信息存储库
             genericInfo = MethodRepository.make(getGenericSignature(),
                                                 getFactory());
         }
-        return genericInfo; //return cached repository
+        return genericInfo; // 返回缓存的存储库
     }
 
     /**
-     * Package-private constructor used by ReflectAccess to enable
-     * instantiation of these objects in Java code from the java.lang
-     * package via sun.reflect.LangReflectAccess.
+     * ReflectAccess 使用的包私有构造函数通过 sun.reflect.LangReflectAccess
+     * 从 java.lang 包启用 Java 代码中这些对象的实例化.
      */
     Method(Class<?> declaringClass,
            String name,
@@ -135,9 +128,7 @@ public final class Method extends Executable {
     }
 
     /**
-     * Package-private routine (exposed to java.lang.Class via
-     * ReflectAccess) which returns a copy of this Method. The copy's
-     * "root" field points to this Method.
+     * 包私有例程（通过 ReflectAccess 暴露给 java.lang.Class）返回此方法的副本。副本的“根”字段指向此方法.
      */
     Method copy() {
         // This routine enables sharing of MethodAccessor objects
@@ -160,7 +151,7 @@ public final class Method extends Executable {
     }
 
     /**
-     * Used by Excecutable for annotation sharing.
+     * 由 Executable 用于注释共享。
      */
     @Override
     Executable getRoot() {
